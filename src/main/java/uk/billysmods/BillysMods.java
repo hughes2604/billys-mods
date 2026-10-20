@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.core.Registry;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -14,7 +15,6 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.DataComponents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
@@ -37,7 +37,7 @@ public final class BillysMods implements ModInitializer {
                     .stacksTo(1)
                     .usingConvertsTo(Items.GLASS_BOTTLE)
                     .component(DataComponents.CONSUMABLE, Consumables.DEFAULT_DRINK)
-                    .component(DataComponents.POTION_CONTENTS, new PotionContents(Optional.empty(), Optional.of(0xE5B441), List.of())), true)
+                    .component(DataComponents.POTION_CONTENTS, new PotionContents(Optional.empty(), Optional.of(0xE5B441), List.of(), Optional.empty())), true)
     );
     public static final Item ELIXIR_OF_MORTALITY = Registry.register(
             BuiltInRegistries.ITEM,
@@ -47,7 +47,7 @@ public final class BillysMods implements ModInitializer {
                     .stacksTo(1)
                     .usingConvertsTo(Items.GLASS_BOTTLE)
                     .component(DataComponents.CONSUMABLE, Consumables.DEFAULT_DRINK)
-                    .component(DataComponents.POTION_CONTENTS, new PotionContents(Optional.empty(), Optional.of(0x8B0000), List.of())), false)
+                    .component(DataComponents.POTION_CONTENTS, new PotionContents(Optional.empty(), Optional.of(0x8B0000), List.of(), Optional.empty())), false)
     );
 
     public static final ResourceKey<CreativeModeTab> ITEM_GROUP_KEY = ResourceKey.create(
