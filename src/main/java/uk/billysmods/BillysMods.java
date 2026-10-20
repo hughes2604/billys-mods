@@ -1,5 +1,7 @@
 package uk.billysmods;
 
+import java.util.List;
+import java.util.Optional;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
@@ -10,9 +12,13 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.DataComponents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.component.Consumables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,12 +32,22 @@ public final class BillysMods implements ModInitializer {
     public static final Item ELIXIR_OF_LIFE = Registry.register(
             BuiltInRegistries.ITEM,
             id("elixir_of_life"),
-            new ElixirItem(new Item.Properties().setId(ELIXIR_OF_LIFE_KEY).stacksTo(1).craftRemainder(Items.GLASS_BOTTLE), true)
+            new ElixirItem(new Item.Properties()
+                    .setId(ELIXIR_OF_LIFE_KEY)
+                    .stacksTo(1)
+                    .usingConvertsTo(Items.GLASS_BOTTLE)
+                    .component(DataComponents.CONSUMABLE, Consumables.DEFAULT_DRINK)
+                    .component(DataComponents.POTION_CONTENTS, new PotionContents(Optional.empty(), Optional.of(0xE5B441), List.of())), true)
     );
     public static final Item ELIXIR_OF_MORTALITY = Registry.register(
             BuiltInRegistries.ITEM,
             id("elixir_of_mortality"),
-            new ElixirItem(new Item.Properties().setId(ELIXIR_OF_MORTALITY_KEY).stacksTo(1).craftRemainder(Items.GLASS_BOTTLE), false)
+            new ElixirItem(new Item.Properties()
+                    .setId(ELIXIR_OF_MORTALITY_KEY)
+                    .stacksTo(1)
+                    .usingConvertsTo(Items.GLASS_BOTTLE)
+                    .component(DataComponents.CONSUMABLE, Consumables.DEFAULT_DRINK)
+                    .component(DataComponents.POTION_CONTENTS, new PotionContents(Optional.empty(), Optional.of(0x8B0000), List.of())), false)
     );
 
     public static final ResourceKey<CreativeModeTab> ITEM_GROUP_KEY = ResourceKey.create(
