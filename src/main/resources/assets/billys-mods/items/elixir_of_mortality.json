@@ -1,6 +1,9 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "billys-mods:item/elixir_of_mortality"
+    "model": "minecraft:item/potion",
+    "tints": [
+      { "type": "minecraft:potion" }
+    ]
   }
 }
