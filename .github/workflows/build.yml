@@ -2,7 +2,7 @@ name: Build mod
 
 on:
   push:
-    branches: [main, "codex/**"]
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
