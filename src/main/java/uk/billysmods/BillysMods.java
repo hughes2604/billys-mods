@@ -37,7 +37,7 @@ public final class BillysMods implements ModInitializer {
                     .stacksTo(1)
                     .usingConvertsTo(Items.GLASS_BOTTLE)
                     .component(DataComponents.CONSUMABLE, Consumables.DEFAULT_DRINK)
-                    .component(DataComponents.POTION_CONTENTS, new PotionContents(Optional.empty(), Optional.of(0xE5B441), List.of(), Optional.empty())), true)
+                    .component(DataComponents.POTION_CONTENTS, new PotionContents(Optional.empty(), Optional.of(0xFFD966), List.of(), Optional.empty())), true)
     );
     public static final Item ELIXIR_OF_MORTALITY = Registry.register(
             BuiltInRegistries.ITEM,
