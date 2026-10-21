@@ -1,18 +1,23 @@
 package uk.billysmods;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.SequencedSet;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
+import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.CreativeModeTab;
@@ -20,6 +25,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.component.Consumables;
+import net.minecraft.world.item.component.TooltipDisplay;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +44,7 @@ public final class BillysMods implements ModInitializer {
                     .stacksTo(1)
                     .usingConvertsTo(Items.GLASS_BOTTLE)
                     .component(DataComponents.ITEM_NAME, Component.literal("Elixir of Immortality"))
+                    .component(DataComponents.TOOLTIP_DISPLAY, elixirTooltipDisplay())
                     .component(DataComponents.CONSUMABLE, Consumables.DEFAULT_DRINK)
                     .component(DataComponents.POTION_CONTENTS, new PotionContents(Optional.empty(), Optional.of(0xFFD966), List.of(), Optional.empty())), true)
     );
@@ -49,6 +56,7 @@ public final class BillysMods implements ModInitializer {
                     .stacksTo(1)
                     .usingConvertsTo(Items.GLASS_BOTTLE)
                     .component(DataComponents.ITEM_NAME, Component.literal("Elixir of Mortality"))
+                    .component(DataComponents.TOOLTIP_DISPLAY, elixirTooltipDisplay())
                     .component(DataComponents.CONSUMABLE, Consumables.DEFAULT_DRINK)
                     .component(DataComponents.POTION_CONTENTS, new PotionContents(Optional.empty(), Optional.of(0x8B0000), List.of(), Optional.empty())), false)
     );
@@ -64,6 +72,12 @@ public final class BillysMods implements ModInitializer {
                     .title(Component.translatable("itemGroup.billys-mods.billys_mods"))
                     .build()
     );
+
+    private static TooltipDisplay elixirTooltipDisplay() {
+        SequencedSet<DataComponentType<?>> hiddenComponents = new LinkedHashSet<>();
+        hiddenComponents.add(DataComponents.POTION_CONTENTS);
+        return new TooltipDisplay(false, hiddenComponents);
+    }
 
     private static ResourceLocation id(String path) {
         return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
@@ -94,7 +108,7 @@ public final class BillysMods implements ModInitializer {
 
     private static MobEffectInstance nextDebuff(
             net.minecraft.world.entity.LivingEntity player,
-            net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> effect
+            Holder<MobEffect> effect
     ) {
         MobEffectInstance current = player.getEffect(effect);
         int nextAmplifier = current == null ? 0 : Math.min(2, current.getAmplifier() + 1);
