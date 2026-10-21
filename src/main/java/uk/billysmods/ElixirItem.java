@@ -20,6 +20,8 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 
 public final class ElixirItem extends PotionItem {
     public static final Holder<MobEffect> IMMORTALITY = Registry.registerForHolder(
@@ -58,6 +60,16 @@ public final class ElixirItem extends PotionItem {
 
     @Override
     public net.minecraft.world.InteractionResult use(Level level, Player player, net.minecraft.world.InteractionHand hand) {
+        if (player.hasEffect(IMMORTALITY) == grantsImmortality) {
+            if (!level.isClientSide()) {
+                player.displayClientMessage(Component.literal(grantsImmortality
+                                ? "YOU ARE ALREADY IMMORTAL"
+                                : "YOU ARE ALREADY MORTAL")
+                        .withStyle(grantsImmortality ? ChatFormatting.GOLD : ChatFormatting.RED), true);
+            }
+            return net.minecraft.world.InteractionResult.FAIL;
+        }
+
         // Keep right-click drinking reliable, including for custom PotionItem instances.
         player.startUsingItem(hand);
         return net.minecraft.world.InteractionResult.CONSUME;
@@ -69,10 +81,12 @@ public final class ElixirItem extends PotionItem {
         if (!level.isClientSide() && user instanceof Player player) {
             if (grantsImmortality) {
                 player.addEffect(new MobEffectInstance(IMMORTALITY, MobEffectInstance.INFINITE_DURATION, 0, false, false, true));
+                level.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 0.8F, 1.0F);
                 player.displayClientMessage(Component.literal("YOU ARE NOW IMMORTAL").withStyle(ChatFormatting.GOLD), false);
                 emitShieldParticles((ServerLevel) level, player, LIFE_PARTICLE_COLOR, 0.018D);
             } else {
                 player.removeEffect(IMMORTALITY);
+                level.playSound(null, player.blockPosition(), SoundEvents.BEACON_DEACTIVATE, SoundSource.PLAYERS, 0.8F, 1.0F);
                 player.displayClientMessage(Component.literal("YOU ARE MORTAL").withStyle(ChatFormatting.RED), false);
                 emitShieldParticles((ServerLevel) level, player, MORTALITY_PARTICLE_COLOR, -0.018D);
             }
