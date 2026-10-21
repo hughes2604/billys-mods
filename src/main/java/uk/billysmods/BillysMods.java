@@ -11,6 +11,8 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -112,6 +114,10 @@ public final class BillysMods implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        PayloadTypeRegistry.playC2S().register(FlightTogglePayload.TYPE, FlightTogglePayload.CODEC);
+        ServerPlayNetworking.registerGlobalReceiver(FlightTogglePayload.TYPE,
+                (payload, context) -> ViltrumiteGenome.toggleFlight(context.player()));
+
         ItemGroupEvents.modifyEntriesEvent(ITEM_GROUP_KEY).register(entries -> {
             entries.accept(ELIXIR_OF_LIFE);
             entries.accept(ELIXIR_OF_MORTALITY);

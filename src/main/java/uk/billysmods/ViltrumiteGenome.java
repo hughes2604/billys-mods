@@ -10,12 +10,15 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class ViltrumiteGenome {
     private static final ResourceLocation ATTACK_DAMAGE_ID = id("genome_strength");
     private static final ResourceLocation ATTACK_KNOCKBACK_ID = id("genome_knockback");
     private static final ResourceLocation ARMOR_ID = id("genome_durability");
     private static final ResourceLocation TOUGHNESS_ID = id("genome_toughness");
+    private static final Set<java.util.UUID> FLIGHT_ENABLED = ConcurrentHashMap.newKeySet();
 
     private ViltrumiteGenome() { }
 
@@ -62,27 +65,37 @@ public final class ViltrumiteGenome {
         }
     }
 
-    private static void tickFlight(ServerPlayer player) {
-        boolean empowered = hasGenome(player);
-        Input input = player.getLastClientInput();
-
-        if (!empowered) {
+    public static void toggleFlight(ServerPlayer player) {
+        if (!hasGenome(player)) {
+            return;
+        }
+        java.util.UUID playerId = player.getUUID();
+        if (FLIGHT_ENABLED.remove(playerId)) {
             player.setNoGravity(false);
-            if (player.isFallFlying()) {
+            player.stopFallFlying();
+            return;
+        }
+        FLIGHT_ENABLED.add(playerId);
+        player.startFallFlying();
+        player.setNoGravity(true);
+    }
+
+    private static void tickFlight(ServerPlayer player) {
+        if (!hasGenome(player)) {
+            if (FLIGHT_ENABLED.remove(player.getUUID())) {
+                player.setNoGravity(false);
                 player.stopFallFlying();
             }
             return;
         }
-
-        // Press jump once airborne to transition into the weightless flight pose.
-        if (input.jump() && !player.onGround() && !player.isFallFlying()) {
-            player.startFallFlying();
-        }
-        if (!player.isFallFlying()) {
-            player.setNoGravity(false);
+        if (!FLIGHT_ENABLED.contains(player.getUUID())) {
             return;
         }
 
+        Input input = player.getLastClientInput();
+        if (!player.isFallFlying()) {
+            player.startFallFlying();
+        }
         player.setNoGravity(true);
         Vec3 look = player.getLookAngle();
         Vec3 right = new Vec3(look.z, 0.0D, -look.x);

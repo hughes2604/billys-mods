@@ -1,9 +1,11 @@
 {
+  "key.category.billys-mods.flight": "Billy's Mods",
+  "key.billys-mods.toggle_flight": "Toggle Viltrumite Flight",
   "itemGroup.billys-mods.billys_mods": "Billy's Mods",
   "item.billys-mods.elixir_of_life": "Elixir of Immortality",
   "item.billys-mods.elixir_of_mortality": "Elixir of Mortality",
   "item.billys-mods.viltrumite_genome": "Viltrumite Genome",
   "item.billys-mods.viltrumite_genome.description": "Grants Viltrumite strength and durability, plus self-propelled flight while carried.",
-  "item.billys-mods.viltrumite_genome.flight_help": "Jump while airborne to fly. Forward follows your look; jump rises and sneak descends.",
+  "item.billys-mods.viltrumite_genome.flight_help": "Press G to toggle flight. Look to steer; jump rises and sneak descends. Change the key in Controls.",
   "effect.billys-mods.immortality": "Immortality"
 }

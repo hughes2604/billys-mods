@@ -2,6 +2,13 @@
 
 Billy's Mods is a Fabric mod for Minecraft Java Edition 1.21.10. It is a single mod project for experimenting with multiple features over time.
 
+## Release milestones
+
+- **Alpha 0.1**: introduced the Elixir of Immortality and Elixir of Mortality.
+- **Alpha 0.2**: introduced the Viltrumite Genome and its strength, durability, and flight powers.
+
+The current mod version is **0.2.0-alpha.2**.
+
 ## Current features
 
 - **Elixir of Life**: drink it to gain persistent immortality. You can be reduced to half a heart, but cannot be killed while the effect is active.
@@ -9,7 +16,7 @@ Billy's Mods is a Fabric mod for Minecraft Java Edition 1.21.10. It is a single 
 - **Viltrumite Genome**: while carried anywhere in your main inventory, armor slots, or offhand, it grants super strength, high durability, and self-propelled flight.
   - Strength raises unarmed attack damage to 20 before armor, adds heavy knockback, and gives successful hits a strong impact sound and a short burst of particles.
   - Durability deflects arrows, prevents damage from unarmed player attacks, and adds substantial armor and toughness against other physical damage.
-  - To fly, jump while airborne. Hold forward to accelerate in the direction you are looking; hold jump to rise and sneak to descend. Movement eases off when you release the controls. The pose uses Minecraft's gliding animation with a subtle bank while turning.
+  - To fly, press the configurable **Toggle Viltrumite Flight** key (default **G**). Press it again to disable flight. Look to steer, hold jump to rise, and sneak to descend. Movement eases off when you release directional controls. The pose uses Minecraft's horizontal gliding animation with a subtle bank while turning.
 - All items are in the **Billy's Mods** creative tab.
 
 ## Download the mod
@@ -20,7 +27,7 @@ Use Minecraft 1.21.10 with Fabric Loader 0.19.5 and Fabric API 0.138.4+1.21.10.
 
 ## Multiplayer
 
-Install Billy's Mods and Fabric API on the server and on each client. Ability checks and damage handling run on the server. The client entrypoint supplies responsive flight movement and the flight pose.
+Install Billy's Mods and Fabric API on the server and on each client. Ability checks and damage handling run on the server. The client entrypoint supplies the configurable flight keybind; movement and flight state are handled on the server.
 
 ## Build requirements
 
