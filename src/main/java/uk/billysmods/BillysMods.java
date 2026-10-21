@@ -14,6 +14,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
@@ -36,6 +37,7 @@ public final class BillysMods implements ModInitializer {
                     .setId(ELIXIR_OF_LIFE_KEY)
                     .stacksTo(1)
                     .usingConvertsTo(Items.GLASS_BOTTLE)
+                    .component(DataComponents.ITEM_NAME, Component.literal("Elixir of Immortality"))
                     .component(DataComponents.CONSUMABLE, Consumables.DEFAULT_DRINK)
                     .component(DataComponents.POTION_CONTENTS, new PotionContents(Optional.empty(), Optional.of(0xFFD966), List.of(), Optional.empty())), true)
     );
@@ -46,6 +48,7 @@ public final class BillysMods implements ModInitializer {
                     .setId(ELIXIR_OF_MORTALITY_KEY)
                     .stacksTo(1)
                     .usingConvertsTo(Items.GLASS_BOTTLE)
+                    .component(DataComponents.ITEM_NAME, Component.literal("Elixir of Mortality"))
                     .component(DataComponents.CONSUMABLE, Consumables.DEFAULT_DRINK)
                     .component(DataComponents.POTION_CONTENTS, new PotionContents(Optional.empty(), Optional.of(0x8B0000), List.of(), Optional.empty())), false)
     );
@@ -74,11 +77,27 @@ public final class BillysMods implements ModInitializer {
         });
         ServerPlayerEvents.ALLOW_DEATH.register((player, damageSource, damageAmount) -> {
             if (player.hasEffect(ElixirItem.IMMORTALITY)) {
+                advanceImmortalityDebuffs(player);
                 player.setHealth(1.0F);
                 return false;
             }
             return true;
         });
         LOGGER.info("Billy's Mods loaded");
+    }
+
+    private static void advanceImmortalityDebuffs(net.minecraft.server.level.ServerPlayer player) {
+        // Advance each debuff by one level at most; replacing the instances resets both timers.
+        player.addEffect(nextDebuff(player, MobEffects.SLOWNESS));
+        player.addEffect(nextDebuff(player, MobEffects.MINING_FATIGUE));
+    }
+
+    private static MobEffectInstance nextDebuff(
+            net.minecraft.world.entity.LivingEntity player,
+            net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> effect
+    ) {
+        MobEffectInstance current = player.getEffect(effect);
+        int nextAmplifier = current == null ? 0 : Math.min(2, current.getAmplifier() + 1);
+        return new MobEffectInstance(effect, 3 * 60 * 20, nextAmplifier, false, true, true);
     }
 }
