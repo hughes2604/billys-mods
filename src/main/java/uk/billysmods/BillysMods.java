@@ -29,6 +29,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.ProjectileDeflection;
+import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
@@ -137,7 +138,7 @@ public final class BillysMods implements ModInitializer {
             }
 
             if (source.getDirectEntity() instanceof AbstractArrow arrow) {
-                arrow.deflect(ProjectileDeflection.REVERSE, target, target, false);
+                arrow.deflect(ProjectileDeflection.REVERSE, target, EntityReference.of(target), false);
                 return false;
             }
 
