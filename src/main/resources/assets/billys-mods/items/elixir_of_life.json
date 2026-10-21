@@ -3,7 +3,10 @@
     "type": "minecraft:model",
     "model": "minecraft:item/potion",
     "tints": [
-      { "type": "minecraft:potion" }
+      {
+        "type": "minecraft:potion",
+        "default": 16767334
+      }
     ]
   }
 }
