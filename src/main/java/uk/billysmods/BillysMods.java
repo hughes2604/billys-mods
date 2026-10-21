@@ -98,7 +98,7 @@ public final class BillysMods implements ModInitializer {
         ServerPlayerEvents.ALLOW_DEATH.register((player, damageSource, damageAmount) -> {
             if (player.hasEffect(ElixirItem.IMMORTALITY)) {
                 advanceImmortalityDebuffs(player);
-                if (damageSource.is(DamageTypes.OUT_OF_WORLD)) {
+                if (damageSource.is(DamageTypes.FELL_OUT_OF_WORLD)) {
                     rescueFromVoid(player);
                 }
                 player.setHealth(1.0F);
@@ -110,7 +110,7 @@ public final class BillysMods implements ModInitializer {
     }
 
     private static void rescueFromVoid(net.minecraft.server.level.ServerPlayer player) {
-        net.minecraft.server.level.ServerLevel level = player.serverLevel();
+        net.minecraft.server.level.ServerLevel level = (net.minecraft.server.level.ServerLevel) player.level();
         BlockPos safePosition = findSafeSurface(level, net.minecraft.core.BlockPos.containing(player.getX(), player.getY(), player.getZ()).getX(),
                 net.minecraft.core.BlockPos.containing(player.getX(), player.getY(), player.getZ()).getZ());
 
