@@ -1,18 +1,14 @@
 package uk.billysmods;
 
-import java.util.List;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 
 public final class ViltrumiteGenome {
@@ -28,15 +24,9 @@ public final class ViltrumiteGenome {
     }
 
     public static boolean hasGenome(Player player) {
-        Inventory inventory = player.getInventory();
-        return containsGenome(inventory.items)
-                || containsGenome(inventory.armor)
-                || containsGenome(inventory.offhand);
-    }
-
-    private static boolean containsGenome(List<ItemStack> stacks) {
-        for (ItemStack stack : stacks) {
-            if (stack.is(BillysMods.VILTRUMITE_GENOME)) {
+        var inventory = player.getInventory();
+        for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
+            if (inventory.getItem(slot).is(BillysMods.VILTRUMITE_GENOME)) {
                 return true;
             }
         }
@@ -65,27 +55,27 @@ public final class ViltrumiteGenome {
         }
         if (enabled) {
             if (instance.getModifier(id) == null) {
-                instance.addTemporaryModifier(new AttributeModifier(id, amount, AttributeModifier.Operation.ADD_VALUE));
+                instance.addTransientModifier(new AttributeModifier(id, amount, AttributeModifier.Operation.ADD_VALUE));
             }
         } else {
             instance.removeModifier(id);
         }
     }
 
-    public static void tickFlight(Player player) {
+    private static void tickFlight(ServerPlayer player) {
         boolean empowered = hasGenome(player);
-        boolean hasElytra = player.getItemBySlot(EquipmentSlot.CHEST).is(Items.ELYTRA);
+        Input input = player.getLastClientInput();
 
         if (!empowered) {
             player.setNoGravity(false);
-            if (player.isFallFlying() && !hasElytra) {
+            if (player.isFallFlying()) {
                 player.stopFallFlying();
             }
             return;
         }
 
         // Press jump once airborne to transition into the weightless flight pose.
-        if (player.jumping && !player.onGround() && !player.isFallFlying()) {
+        if (input.jump() && !player.onGround() && !player.isFallFlying()) {
             player.startFallFlying();
         }
         if (!player.isFallFlying()) {
@@ -102,23 +92,25 @@ public final class ViltrumiteGenome {
             right = new Vec3(1.0D, 0.0D, 0.0D);
         }
 
-        Vec3 input = look.scale(player.zza).add(right.scale(player.xxa));
-        if (player.jumping) {
-            input = input.add(0.0D, 0.55D, 0.0D);
+        double forward = (input.forward() ? 1.0D : 0.0D) - (input.backward() ? 1.0D : 0.0D);
+        double strafe = (input.right() ? 1.0D : 0.0D) - (input.left() ? 1.0D : 0.0D);
+        Vec3 flightInput = look.scale(forward).add(right.scale(strafe));
+        if (input.jump()) {
+            flightInput = flightInput.add(0.0D, 0.55D, 0.0D);
         }
-        if (player.isShiftKeyDown()) {
-            input = input.add(0.0D, -0.55D, 0.0D);
+        if (input.sneak()) {
+            flightInput = flightInput.add(0.0D, -0.55D, 0.0D);
         }
 
         Vec3 velocity = player.getDeltaMovement();
         Vec3 nextVelocity;
-        if (input.lengthSqr() < 1.0E-4D) {
+        if (flightInput.lengthSqr() < 1.0E-4D) {
             nextVelocity = velocity.scale(0.78D);
         } else {
-            Vec3 desiredVelocity = input.normalize().scale(0.9D);
+            Vec3 desiredVelocity = flightInput.normalize().scale(0.9D);
             nextVelocity = velocity.scale(0.82D).add(desiredVelocity.scale(0.18D));
         }
         player.setDeltaMovement(nextVelocity);
-        player.yBodyRot = player.getYRot() + player.xxa * 24.0F;
+        player.yBodyRot = player.getYRot() + (float) strafe * 24.0F;
     }
 }
