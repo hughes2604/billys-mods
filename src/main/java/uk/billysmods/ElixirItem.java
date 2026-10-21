@@ -1,8 +1,5 @@
 package uk.billysmods;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
@@ -36,8 +33,6 @@ public final class ElixirItem extends PotionItem {
     private static final int LIFE_PARTICLE_COLOR = 0xFFD966;
     private static final int MORTALITY_PARTICLE_COLOR = 0x8B0000;
     private static final int SHIELD_PARTICLE_COUNT = 24;
-    private static final int POST_DRINK_GRACE_TICKS = 10;
-    private static final Map<UUID, Long> POST_DRINK_GRACE = new ConcurrentHashMap<>();
 
     private final boolean grantsImmortality;
 
@@ -65,18 +60,6 @@ public final class ElixirItem extends PotionItem {
 
     @Override
     public net.minecraft.world.InteractionResult use(Level level, Player player, net.minecraft.world.InteractionHand hand) {
-        if (!level.isClientSide()) {
-            long gameTime = level.getGameTime();
-            Long graceEndsAt = POST_DRINK_GRACE.get(player.getUUID());
-            if (graceEndsAt != null) {
-                if (gameTime <= graceEndsAt) {
-                    // A held use button can retrigger immediately after a drink completes.
-                    return net.minecraft.world.InteractionResult.FAIL;
-                }
-                POST_DRINK_GRACE.remove(player.getUUID(), graceEndsAt);
-            }
-        }
-
         if (player.hasEffect(IMMORTALITY) == grantsImmortality) {
             if (!level.isClientSide()) {
                 player.displayClientMessage(Component.literal(grantsImmortality
@@ -96,7 +79,6 @@ public final class ElixirItem extends PotionItem {
     public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity user) {
         ItemStack result = super.finishUsingItem(stack, level, user);
         if (!level.isClientSide() && user instanceof Player player) {
-            POST_DRINK_GRACE.put(player.getUUID(), level.getGameTime() + POST_DRINK_GRACE_TICKS);
             if (grantsImmortality) {
                 player.addEffect(new MobEffectInstance(IMMORTALITY, MobEffectInstance.INFINITE_DURATION, 0, false, false, true));
                 level.playSound(null, player.blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 0.8F, 1.0F);

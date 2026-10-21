@@ -3,13 +3,15 @@
   "id": "billys-mods",
   "version": "${version}",
   "name": "Billy's Mods",
-  "description": "A collection of experimental Minecraft features, starting with the Elixirs of Life and Mortality.",
+  "description": "A collection of experimental Minecraft features, including the Elixirs of Life and Mortality and Viltrumite Genome.",
   "authors": ["Billy"],
   "license": "MIT",
   "environment": "*",
   "entrypoints": {
-    "main": ["uk.billysmods.BillysMods"]
+    "main": ["uk.billysmods.BillysMods"],
+    "client": ["uk.billysmods.ViltrumiteClient"]
   },
+  "mixins": ["billys-mods.mixins.json"],
   "depends": {
     "fabricloader": ">=0.19.5",
     "minecraft": "~1.21.10",

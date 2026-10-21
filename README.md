@@ -6,7 +6,11 @@ Billy's Mods is a Fabric mod for Minecraft Java Edition 1.21.10. It is a single 
 
 - **Elixir of Life**: drink it to gain persistent immortality. You can be reduced to half a heart, but cannot be killed while the effect is active.
 - **Elixir of Mortality**: drink it to remove immortality.
-- Both elixirs are in the **Billy's Mods** creative tab. Drinking either plays an activation sound and sends a private chat message to the player who drank it.
+- **Viltrumite Genome**: while carried anywhere in your main inventory, armor slots, or offhand, it grants super strength, high durability, and self-propelled flight.
+  - Strength raises unarmed attack damage to 20 before armor, adds heavy knockback, and gives successful hits a strong impact sound and a short burst of particles.
+  - Durability deflects arrows, prevents damage from unarmed player attacks, and adds substantial armor and toughness against other physical damage.
+  - To fly, jump while airborne. Hold forward to accelerate in the direction you are looking; hold jump to rise and sneak to descend. Movement eases off when you release the controls. The pose uses Minecraft's gliding animation with a subtle bank while turning.
+- All items are in the **Billy's Mods** creative tab.
 
 ## Download the mod
 
@@ -16,7 +20,7 @@ Use Minecraft 1.21.10 with Fabric Loader 0.19.5 and Fabric API 0.138.4+1.21.10.
 
 ## Multiplayer
 
-Install Billy's Mods and Fabric API on the server and on each client. The immortality effect is applied and checked by the server, so it behaves consistently in multiplayer.
+Install Billy's Mods and Fabric API on the server and on each client. Ability checks and damage handling run on the server. The client entrypoint supplies responsive flight movement and the flight pose.
 
 ## Build requirements
 
