@@ -98,7 +98,7 @@ public final class ViltrumiteGenome {
         if (input.jump()) {
             flightInput = flightInput.add(0.0D, 0.55D, 0.0D);
         }
-        if (input.sneak()) {
+        if (input.shift()) {
             flightInput = flightInput.add(0.0D, -0.55D, 0.0D);
         }
 
