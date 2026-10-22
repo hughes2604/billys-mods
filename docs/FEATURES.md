@@ -22,9 +22,11 @@ Carry the **Viltrumite Genome** anywhere in your player inventory, armor slots, 
 ### Flight
 
 - Press **G** by default to turn Viltrumite flight on or off.
+- Holding forward without boost now accelerates smoothly to a separate cruise cap of 1.8 blocks per tick. It stays well below even Boost Level 1.
 - Hold **Left Control** by default while flying forward to activate boost. The four boost speeds are **5, 10, 20, and 40 blocks per tick**; each level doubles the previous level.
 - Starting a Level 3 or 4 boost creates a sonic boom ring and sound. Boosting also adds a very subtle local camera shake.
 - Press **]** to raise the selected boost level or **[** to lower it. There are four levels. The level changes only the speed while Control boost is active; it does not change normal flight.
+- Flight does not consume hunger or play walking footsteps while active, even if you are skimming along the ground.
 - Flight follows the direction you are looking. Move forward or backward, and use jump to rise or sneak to descend.
 - Flying fast forward engages the Superman glide pose. Slowing down or flying backward returns to the upright hover pose. Backward flight stays slower.
 - Flight key assignments can be changed in Minecraft's **Options → Controls → Key Binds** menu. Search for **Billy's Mods**.

@@ -32,9 +32,12 @@ public final class ViltrumiteGenome {
     private static final Set<UUID> FLIGHT_ACTIVE = new HashSet<>();
     private static final Set<UUID> FLIGHT_BOOSTING = new HashSet<>();
     private static final Map<UUID, Integer> BOOST_LEVELS = new HashMap<>();
-    private static final Map<UUID, Boolean> SPRINT_BEFORE_FLIGHT_BOOST = new HashMap<>();
+    private static final Map<UUID, Boolean> SPRINT_BEFORE_FLIGHT = new HashMap<>();
     private static final Map<UUID, Integer> PUNCH_FOV_TICKS = new HashMap<>();
-    private static final double CRUISE_SPEED = 1.10D;
+    private static final double CRUISE_SPEED = 1.80D;
+    private static final double CRUISE_ACCELERATION = 0.12D;
+    private static final double BOOST_ACCELERATION = 0.18D;
+    private static final double COUNTER_STEER_ACCELERATION = 0.30D;
     private static final double[] BOOST_SPEEDS = {5.0D, 10.0D, 20.0D, 40.0D};
     private static final int MAX_BOOST_LEVEL = BOOST_SPEEDS.length;
     private static final double REVERSE_SPEED = 0.90D;
@@ -136,6 +139,9 @@ public final class ViltrumiteGenome {
                 stopFlight(player, playerId);
                 player.displayClientMessage(Component.literal("VILTRUMITE FLIGHT OFF").withStyle(ChatFormatting.GRAY), true);
             } else {
+                SPRINT_BEFORE_FLIGHT.put(playerId, player.isSprinting());
+                PUNCH_FOV_TICKS.remove(playerId);
+                player.setSprinting(false);
                 FLIGHT_ACTIVE.add(playerId);
                 player.setNoGravity(true);
                 player.stopFallFlying();
@@ -156,8 +162,6 @@ public final class ViltrumiteGenome {
 
         if (!FLIGHT_ACTIVE.contains(playerId)) return;
         if (action == 1 && FLIGHT_BOOSTING.add(playerId)) {
-            SPRINT_BEFORE_FLIGHT_BOOST.put(playerId, player.isSprinting());
-            player.setSprinting(true);
             if (getBoostLevel(playerId) >= 3) {
                 ServerLevel level = (ServerLevel) player.level();
                 level.sendParticles(ParticleTypes.SONIC_BOOM,
@@ -168,21 +172,13 @@ public final class ViltrumiteGenome {
             }
             publishFlightState(player, true);
         } else if (action == 2 && FLIGHT_BOOSTING.remove(playerId)) {
-            restoreSprintAfterBoost(player, playerId);
             publishFlightState(player, true);
-        }
-    }
-
-    private static void restoreSprintAfterBoost(ServerPlayer player, UUID playerId) {
-        Boolean wasSprinting = SPRINT_BEFORE_FLIGHT_BOOST.remove(playerId);
-        if (Boolean.FALSE.equals(wasSprinting) && !PUNCH_FOV_TICKS.containsKey(playerId)) {
-            player.setSprinting(false);
         }
     }
 
     public static void pulsePunchFov(ServerPlayer player) {
         UUID playerId = player.getUUID();
-        if (!player.isSprinting() && !FLIGHT_BOOSTING.contains(playerId)) {
+        if (!player.isSprinting() && !FLIGHT_ACTIVE.contains(playerId) && !FLIGHT_BOOSTING.contains(playerId)) {
             player.setSprinting(true);
             PUNCH_FOV_TICKS.put(playerId, 4);
         }
@@ -194,10 +190,14 @@ public final class ViltrumiteGenome {
         if (ticks == null) return;
         if (ticks <= 1) {
             PUNCH_FOV_TICKS.remove(playerId);
-            if (!FLIGHT_BOOSTING.contains(playerId)) player.setSprinting(false);
+            if (!FLIGHT_BOOSTING.contains(playerId) && !FLIGHT_ACTIVE.contains(playerId)) player.setSprinting(false);
         } else {
             PUNCH_FOV_TICKS.put(playerId, ticks - 1);
         }
+    }
+
+    public static boolean isFlightActive(Player player) {
+        return FLIGHT_ACTIVE.contains(player.getUUID());
     }
 
     public static void stopFlightOnDisconnect(ServerPlayer player) {
@@ -205,10 +205,17 @@ public final class ViltrumiteGenome {
         BOOST_LEVELS.remove(playerId);
         if (FLIGHT_ACTIVE.remove(playerId)) {
             FLIGHT_BOOSTING.remove(playerId);
-            restoreSprintAfterBoost(player, playerId);
+            restoreSprintAfterFlight(player, playerId);
             PUNCH_FOV_TICKS.remove(playerId);
             player.setNoGravity(false);
             player.stopFallFlying();
+        }
+    }
+
+    private static void restoreSprintAfterFlight(ServerPlayer player, UUID playerId) {
+        Boolean wasSprinting = SPRINT_BEFORE_FLIGHT.remove(playerId);
+        if (Boolean.TRUE.equals(wasSprinting)) {
+            player.setSprinting(true);
         }
     }
 
@@ -240,7 +247,7 @@ public final class ViltrumiteGenome {
     private static void stopFlight(ServerPlayer player, UUID playerId) {
         FLIGHT_ACTIVE.remove(playerId);
         FLIGHT_BOOSTING.remove(playerId);
-        restoreSprintAfterBoost(player, playerId);
+        restoreSprintAfterFlight(player, playerId);
         PUNCH_FOV_TICKS.remove(playerId);
         publishFlightState(player, false);
         player.setNoGravity(false);
@@ -257,6 +264,9 @@ public final class ViltrumiteGenome {
         if (!FLIGHT_ACTIVE.contains(playerId)) return;
 
         player.setNoGravity(true);
+        if (player.isSprinting()) {
+            player.setSprinting(false);
+        }
         Input input = player.getLastClientInput();
         Vec3 look = player.getLookAngle().normalize();
         float yawRadians = player.getYRot() * ((float) Math.PI / 180.0F);
@@ -275,9 +285,9 @@ public final class ViltrumiteGenome {
             desired = direction.normalize().scale(topSpeed);
         }
         boolean boostingForward = FLIGHT_BOOSTING.contains(playerId) && forwardInput > 0.0D;
-        double acceleration = boostingForward ? 0.18D : 0.13D;
+        double acceleration = boostingForward ? BOOST_ACCELERATION : CRUISE_ACCELERATION;
         if (velocity.lengthSqr() > 0.04D && velocity.dot(desired) < 0.0D) {
-            acceleration = 0.30D;
+            acceleration = COUNTER_STEER_ACCELERATION;
         }
         Vec3 nextVelocity = velocity.scale(1.0D - acceleration).add(desired.scale(acceleration));
         double speed = nextVelocity.length();
