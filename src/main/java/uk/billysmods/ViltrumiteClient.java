@@ -5,6 +5,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.ResourceLocation;
 import org.lwjgl.glfw.GLFW;
@@ -23,7 +24,14 @@ public final class ViltrumiteClient implements ClientModInitializer {
         fasterFlight = register("key.billys-mods.flight_faster", GLFW.GLFW_KEY_RIGHT_BRACKET, category);
         slowerFlight = register("key.billys-mods.flight_slower", GLFW.GLFW_KEY_LEFT_BRACKET, category);
 
+        ClientPlayNetworking.registerGlobalReceiver(FlightStatePayload.TYPE,
+                (payload, context) -> context.client().execute(() ->
+                        FlightClientState.setFlying(payload.entityId(), payload.active())));
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> FlightClientState.clear());
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> FlightClientState.clear());
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            FlightClientState.removeMissing(client.level);
             if (client.player == null || client.screen != null) {
                 return;
             }

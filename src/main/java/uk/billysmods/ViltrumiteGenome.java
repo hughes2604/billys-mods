@@ -94,6 +94,7 @@ public final class ViltrumiteGenome {
                 FLIGHT_SPEED.put(playerId, 1);
                 player.setNoGravity(true);
                 player.stopFallFlying();
+                publishFlightState(player, true);
                 showFlightSpeed(player, 1);
             }
             return;
@@ -119,8 +120,38 @@ public final class ViltrumiteGenome {
                 .withStyle(ChatFormatting.AQUA), true);
     }
 
+    public static void stopFlightOnDisconnect(ServerPlayer player) {
+        Integer stage = FLIGHT_SPEED.get(player.getUUID());
+        if (stage != null) {
+            stopFlight(player, player.getUUID());
+        }
+    }
+
+    public static void syncFlightState(ServerPlayer viewer) {
+        for (ServerPlayer subject : viewer.server.getPlayerList().getPlayers()) {
+            if (FLIGHT_SPEED.containsKey(subject.getUUID()) && subject.level() == viewer.level()) {
+                ServerPlayNetworking.send(viewer, new FlightStatePayload(subject.getId(), true));
+            }
+        }
+    }
+
+    public static void syncTrackedPlayer(ServerPlayer subject, ServerPlayer viewer) {
+        if (FLIGHT_SPEED.containsKey(subject.getUUID())) {
+            ServerPlayNetworking.send(viewer, new FlightStatePayload(subject.getId(), true));
+        }
+    }
+
+    private static void publishFlightState(ServerPlayer subject, boolean active) {
+        for (ServerPlayer viewer : subject.server.getPlayerList().getPlayers()) {
+            if (viewer.level() == subject.level()) {
+                ServerPlayNetworking.send(viewer, new FlightStatePayload(subject.getId(), active));
+            }
+        }
+    }
+
     private static void stopFlight(ServerPlayer player, UUID playerId) {
         FLIGHT_SPEED.remove(playerId);
+        publishFlightState(player, false);
         player.setNoGravity(false);
         player.stopFallFlying();
         player.setDeltaMovement(player.getDeltaMovement().scale(0.2D));
@@ -143,7 +174,8 @@ public final class ViltrumiteGenome {
         Input input = player.getLastClientInput();
         Vec3 look = player.getLookAngle().normalize();
         float yawRadians = player.getYRot() * ((float) Math.PI / 180.0F);
-        Vec3 right = new Vec3(Math.cos(yawRadians), 0.0D, Math.sin(yawRadians));
+        // Negate the yaw perpendicular: at yaw zero, Minecraft faces +Z and its right is -X.
+        Vec3 right = new Vec3(-Math.cos(yawRadians), 0.0D, -Math.sin(yawRadians));
         double forwardInput = (input.forward() ? 1.0D : 0.0D) - (input.backward() ? 1.0D : 0.0D);
         double strafeInput = (input.right() ? 1.0D : 0.0D) - (input.left() ? 1.0D : 0.0D);
         double verticalInput = (input.jump() ? 1.0D : 0.0D) - (input.shift() ? 1.0D : 0.0D);
@@ -159,7 +191,11 @@ public final class ViltrumiteGenome {
             nextVelocity = velocity.scale(stage == 1 ? 0.76D : 0.985D);
         } else {
             Vec3 desired = direction.normalize().scale(FLIGHT_SPEEDS[stage]);
-            double responsiveness = stage == 1 ? 0.20D : (stage == 2 ? 0.16D : 0.18D);
+            double responsiveness = stage == 1 ? 0.24D : (stage == 2 ? 0.24D : 0.26D);
+            if (velocity.lengthSqr() > 0.04D && velocity.dot(desired) < 0.0D) {
+                // Stronger reverse thrust prevents long drifts when changing direction.
+                responsiveness = Math.max(responsiveness, 0.42D);
+            }
             nextVelocity = velocity.scale(1.0D - responsiveness).add(desired.scale(responsiveness));
         }
 

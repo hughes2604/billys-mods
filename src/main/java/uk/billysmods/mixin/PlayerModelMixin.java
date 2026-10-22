@@ -4,6 +4,7 @@ import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.world.item.Items;
+import uk.billysmods.FlightClientState;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -21,7 +22,18 @@ public abstract class PlayerModelMixin {
 
     @Inject(method = "setupAnim", at = @At("TAIL"))
     private void billysMods$applyViltrumiteFlightPose(AvatarRenderState state, CallbackInfo callbackInfo) {
+        if (!FlightClientState.isFlying(state.id)) {
+            return;
+        }
+
+        // Keep hovering legs still after vanilla has applied its walking animation.
         if (!state.isFallFlying || state.chestEquipment.is(Items.ELYTRA)) {
+            this.rightLeg.xRot = 0.04F;
+            this.leftLeg.xRot = 0.04F;
+            this.rightLeg.yRot = 0.0F;
+            this.leftLeg.yRot = 0.0F;
+            this.rightLeg.zRot = 0.015F;
+            this.leftLeg.zRot = -0.015F;
             return;
         }
 

@@ -13,6 +13,8 @@ import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.EntityTrackingEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -117,8 +119,25 @@ public final class BillysMods implements ModInitializer {
     @Override
     public void onInitialize() {
         PayloadTypeRegistry.playC2S().register(FlightTogglePayload.TYPE, FlightTogglePayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(FlightStatePayload.TYPE, FlightStatePayload.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(FlightTogglePayload.TYPE,
                 (payload, context) -> ViltrumiteGenome.handleFlightControl(context.player(), payload.action()));
+
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+            ViltrumiteGenome.syncFlightState(handler.player);
+            for (ServerPlayer viewer : server.getPlayerList().getPlayers()) {
+                if (viewer != handler.player) {
+                    ViltrumiteGenome.syncTrackedPlayer(handler.player, viewer);
+                }
+            }
+        });
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) ->
+                ViltrumiteGenome.stopFlightOnDisconnect(handler.player));
+        EntityTrackingEvents.START_TRACKING.register((entity, viewer) -> {
+            if (entity instanceof ServerPlayer subject) {
+                ViltrumiteGenome.syncTrackedPlayer(subject, viewer);
+            }
+        });
 
         UseItemCallback.EVENT.register((player, level, hand) ->
                 player.hasEffect(ElixirItem.IMMORTALITY)
