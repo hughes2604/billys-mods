@@ -1,9 +1,7 @@
 package uk.billysmods;
 
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.SequencedSet;
 import java.util.Set;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
@@ -19,7 +17,6 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
-import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -28,20 +25,18 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
-import net.minecraft.world.entity.projectile.ProjectileDeflection;
-import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
-import net.minecraft.world.item.component.Consumables;
-import net.minecraft.world.item.component.TooltipDisplay;
+import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
@@ -65,32 +60,27 @@ public final class BillysMods implements ModInitializer {
             BuiltInRegistries.ITEM,
             id("elixir_of_life"),
             new ElixirItem(new Item.Properties()
-                    .setId(ELIXIR_OF_LIFE_KEY)
-                    .stacksTo(1)
+                                        .stacksTo(1)
                     .usingConvertsTo(Items.GLASS_BOTTLE)
                     .component(DataComponents.ITEM_NAME, Component.literal("Elixir of Immortality"))
-                    .component(DataComponents.TOOLTIP_DISPLAY, elixirTooltipDisplay())
-                    .component(DataComponents.CONSUMABLE, Consumables.DEFAULT_DRINK)
-                    .component(DataComponents.POTION_CONTENTS, new PotionContents(Optional.empty(), Optional.of(0xFFD966), List.of(), Optional.empty())), true)
+                    .component(DataComponents.POTION_CONTENTS, new PotionContents(Optional.of(Potions.WATER), Optional.of(0xFFD966), List.of())), true)
     );
     public static final Item ELIXIR_OF_MORTALITY = Registry.register(
             BuiltInRegistries.ITEM,
             id("elixir_of_mortality"),
             new ElixirItem(new Item.Properties()
-                    .setId(ELIXIR_OF_MORTALITY_KEY)
-                    .stacksTo(1)
+                                        .stacksTo(1)
                     .usingConvertsTo(Items.GLASS_BOTTLE)
                     .component(DataComponents.ITEM_NAME, Component.literal("Elixir of Mortality"))
                     .component(DataComponents.TOOLTIP_DISPLAY, elixirTooltipDisplay())
                     .component(DataComponents.CONSUMABLE, Consumables.DEFAULT_DRINK)
-                    .component(DataComponents.POTION_CONTENTS, new PotionContents(Optional.empty(), Optional.of(0x8B0000), List.of(), Optional.empty())), false)
+                    .component(DataComponents.POTION_CONTENTS, new PotionContents(Optional.of(Potions.WATER), Optional.of(0x8B0000), List.of())), false)
     );
     public static final Item VILTRUMITE_GENOME = Registry.register(
             BuiltInRegistries.ITEM,
             id("viltrumite_genome"),
             new ViltrumiteGenomeItem(new Item.Properties()
-                    .setId(VILTRUMITE_GENOME_KEY)
-                    .stacksTo(1)
+                                        .stacksTo(1)
                     .component(DataComponents.ITEM_NAME, Component.literal("Viltrumite Genome")))
     );
 
@@ -105,12 +95,6 @@ public final class BillysMods implements ModInitializer {
                     .title(Component.translatable("itemGroup.billys-mods.billys_mods"))
                     .build()
     );
-
-    private static TooltipDisplay elixirTooltipDisplay() {
-        SequencedSet<DataComponentType<?>> hiddenComponents = new LinkedHashSet<>();
-        hiddenComponents.add(DataComponents.POTION_CONTENTS);
-        return new TooltipDisplay(false, hiddenComponents);
-    }
 
     private static ResourceLocation id(String path) {
         return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
@@ -142,8 +126,8 @@ public final class BillysMods implements ModInitializer {
         UseItemCallback.EVENT.register((player, level, hand) ->
                 player.hasEffect(ElixirItem.IMMORTALITY)
                         && player.getItemInHand(hand).is(Items.MILK_BUCKET)
-                        ? InteractionResult.FAIL
-                        : InteractionResult.PASS);
+                        ? InteractionResultHolder.fail(player.getItemInHand(hand))
+                        : InteractionResultHolder.pass(player.getItemInHand(hand)));
 
         ItemGroupEvents.modifyEntriesEvent(ITEM_GROUP_KEY).register(entries -> {
             entries.accept(ELIXIR_OF_LIFE);
@@ -175,7 +159,7 @@ public final class BillysMods implements ModInitializer {
             }
 
             if (source.getDirectEntity() instanceof AbstractArrow arrow) {
-                arrow.deflect(ProjectileDeflection.REVERSE, target, EntityReference.of(target), false);
+                arrow.setDeltaMovement(arrow.getDeltaMovement().scale(-0.8D));
                 return false;
             }
 
@@ -226,7 +210,7 @@ public final class BillysMods implements ModInitializer {
         }
         if (safePosition != null) {
             player.teleportTo(level, safePosition.getX() + 0.5D, safePosition.getY(), safePosition.getZ() + 0.5D,
-                    Set.of(), player.getYRot(), player.getXRot(), true);
+                    Set.of(), player.getYRot(), player.getXRot());
             player.setDeltaMovement(Vec3.ZERO);
             player.hurtMarked = true;
         }
@@ -255,7 +239,7 @@ public final class BillysMods implements ModInitializer {
     }
 
     private static boolean isSafeLanding(ServerLevel level, int x, int y, int z) {
-        if (y <= level.getMinY() || y + 1 >= level.getMaxY()) {
+        if (y <= level.getMinBuildHeight() || y + 1 >= level.getMaxBuildHeight()) {
             return false;
         }
         BlockPos floor = new BlockPos(x, y - 1, z);
@@ -291,8 +275,8 @@ public final class BillysMods implements ModInitializer {
     }
 
     private static void advanceImmortalityDebuffs(ServerPlayer player) {
-        player.addEffect(nextDebuff(player, MobEffects.SLOWNESS));
-        player.addEffect(nextDebuff(player, MobEffects.MINING_FATIGUE));
+        player.addEffect(nextDebuff(player, MobEffects.MOVEMENT_SLOWDOWN));
+        player.addEffect(nextDebuff(player, MobEffects.DIG_SLOWDOWN));
     }
 
     private static MobEffectInstance nextDebuff(
