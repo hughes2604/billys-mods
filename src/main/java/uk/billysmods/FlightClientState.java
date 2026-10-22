@@ -37,5 +37,6 @@ public final class FlightClientState {
 
     public static void clear() {
         FLYING_ENTITY_IDS.clear();
+        BOOSTING_ENTITY_IDS.clear();
     }
 }

@@ -15,7 +15,7 @@ You do not need to install a coding program or build the mod yourself. The downl
 ## What is included
 
 - **Elixirs** — drink the Elixir of Immortality to become immortal, and the Elixir of Mortality to become mortal again.
-- **Powers** — carry the Viltrumite Genome to gain strength, durability, and flight. Flight uses four selectable boost levels.
+- **Powers** — carry the Viltrumite Genome to gain strength, durability, and flight. Flight uses four selectable boost levels, each twice as fast as the previous level.
 
 Read [features and controls](docs/FEATURES.md) for details, or see the [changelog](CHANGELOG.md) for the Alpha update history.
 

@@ -35,7 +35,7 @@ public final class ViltrumiteGenome {
     private static final Map<UUID, Boolean> SPRINT_BEFORE_FLIGHT_BOOST = new HashMap<>();
     private static final Map<UUID, Integer> PUNCH_FOV_TICKS = new HashMap<>();
     private static final double CRUISE_SPEED = 1.10D;
-    private static final double[] BOOST_SPEEDS = {3.70D, 4.00D, 4.35D, 4.70D};
+    private static final double[] BOOST_SPEEDS = {5.0D, 10.0D, 20.0D, 40.0D};
     private static final int MAX_BOOST_LEVEL = BOOST_SPEEDS.length;
     private static final double REVERSE_SPEED = 0.90D;
     private static final double SUPERMAN_ENTRY_SPEED = 1.18D;
@@ -158,6 +158,14 @@ public final class ViltrumiteGenome {
         if (action == 1 && FLIGHT_BOOSTING.add(playerId)) {
             SPRINT_BEFORE_FLIGHT_BOOST.put(playerId, player.isSprinting());
             player.setSprinting(true);
+            if (getBoostLevel(playerId) >= 3) {
+                ServerLevel level = (ServerLevel) player.level();
+                level.sendParticles(ParticleTypes.SONIC_BOOM,
+                        player.getX(), player.getY() + player.getBbHeight() * 0.5D, player.getZ(),
+                        1, 0.0D, 0.0D, 0.0D, 0.0D);
+                level.playSound(null, player.blockPosition(), net.minecraft.sounds.SoundEvents.WARDEN_SONIC_BOOM,
+                        net.minecraft.sounds.SoundSource.PLAYERS, 0.65F, 1.35F);
+            }
             publishFlightState(player, true);
         } else if (action == 2 && FLIGHT_BOOSTING.remove(playerId)) {
             restoreSprintAfterBoost(player, playerId);
