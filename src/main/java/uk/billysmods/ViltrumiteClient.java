@@ -33,7 +33,7 @@ public final class ViltrumiteClient implements ClientModInitializer {
                     if (payload.boosting() && !wasBoosting && context.client().player != null
                             && context.client().player.getId() == payload.entityId()) {
                         context.client().getSoundManager().play(SimpleSoundInstance.forLocalAmbience(
-                                SoundEvents.TRIDENT_RIPTIDE_3, 1.25F, 0.85F));
+                                SoundEvents.TRIDENT_RIPTIDE_3.value(), 1.25F, 0.85F));
                     }
                 }));
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
