@@ -105,7 +105,13 @@ public final class BillysMods implements ModInitializer {
         PayloadTypeRegistry.playC2S().register(FlightTogglePayload.TYPE, FlightTogglePayload.CODEC);
         PayloadTypeRegistry.playS2C().register(FlightStatePayload.TYPE, FlightStatePayload.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(FlightTogglePayload.TYPE,
-                (payload, context) -> ViltrumiteGenome.handleFlightControl(context.player(), payload.action()));
+                (payload, context) -> {
+                    if (payload.action() == 5) {
+                        ViltrumiteGenome.setFlightInput(context.player(), payload);
+                    } else {
+                        ViltrumiteGenome.handleFlightControl(context.player(), payload.action());
+                    }
+                });
 
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             ViltrumiteGenome.syncFlightState(handler.player);
