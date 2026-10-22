@@ -34,7 +34,7 @@ public final class ViltrumiteGenome {
     private static final Map<UUID, Boolean> SPRINT_BEFORE_FLIGHT_BOOST = new HashMap<>();
     private static final Map<UUID, Integer> PUNCH_FOV_TICKS = new HashMap<>();
     private static final double CRUISE_SPEED = 1.10D;
-    private static final double BOOST_SPEED = 3.35D;
+    private static final double BOOST_SPEED = 3.70D;
     private static final double REVERSE_SPEED = 0.90D;
     private static final double SUPERMAN_ENTRY_SPEED = 1.18D;
     private static final double SUPERMAN_EXIT_SPEED = 0.92D;
