@@ -1,12 +1,11 @@
 package uk.billysmods;
 
-import java.util.function.Consumer;
+import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.TooltipDisplay;
 
 public final class ViltrumiteGenomeItem extends Item {
     public ViltrumiteGenomeItem(Properties properties) {
@@ -14,16 +13,8 @@ public final class ViltrumiteGenomeItem extends Item {
     }
 
     @Override
-    public void appendHoverText(
-            ItemStack stack,
-            Item.TooltipContext context,
-            TooltipDisplay display,
-            Consumer<Component> textConsumer,
-            TooltipFlag type
-    ) {
-        textConsumer.accept(Component.translatable("item.billys-mods.viltrumite_genome.description")
-                .withStyle(ChatFormatting.GRAY));
-        textConsumer.accept(Component.translatable("item.billys-mods.viltrumite_genome.flight_help")
-                .withStyle(ChatFormatting.AQUA));
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> lines, TooltipFlag flag) {
+        lines.add(Component.translatable("item.billys-mods.viltrumite_genome.description").withStyle(ChatFormatting.GRAY));
+        lines.add(Component.translatable("item.billys-mods.viltrumite_genome.flight_help").withStyle(ChatFormatting.AQUA));
     }
 }
