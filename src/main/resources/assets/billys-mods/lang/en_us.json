@@ -1,0 +1,14 @@
+{
+  "key.category.billys-mods.flight": "Billy's Mods",
+  "key.billys-mods.toggle_flight": "Toggle Viltrumite Flight",
+  "key.billys-mods.flight_boost": "Viltrumite Flight Boost (hold Control)",
+  "itemGroup.billys-mods.billys_mods": "Billy's Mods",
+  "item.billys-mods.elixir_of_life": "Elixir of Immortality",
+  "item.billys-mods.elixir_of_mortality": "Elixir of Mortality",
+  "item.billys-mods.viltrumite_genome": "Viltrumite Genome",
+  "item.billys-mods.viltrumite_genome.description": "Grants Viltrumite strength and durability, plus self-propelled flight while carried.",
+  "item.billys-mods.viltrumite_genome.flight_help": "G toggles flight. Hold Control to boost at your selected level. [ lowers and ] raises the boost level (1–4); these only change boosted speed. Forward and backward follow your look angle; jump and sneak add vertical thrust.",
+  "effect.billys-mods.immortality": "Immortality",
+  "key.billys-mods.lower_boost_level": "Lower Flight Boost Level ([)",
+  "key.billys-mods.raise_boost_level": "Raise Flight Boost Level (])"
+}

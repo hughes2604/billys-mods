@@ -1,0 +1,47 @@
+name: Build mod
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Java 25 for Gradle and Fabric Loom
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 9.7.1
+      - name: Build installable mod JAR
+        run: gradle build --no-daemon
+      - name: Remote Minecraft client startup smoke test
+        run: |
+          set +e
+          timeout --signal=TERM 150s xvfb-run -a env LIBGL_ALWAYS_SOFTWARE=1 SDL_AUDIODRIVER=dummy gradle runClient --no-daemon
+          status=$?
+          set -e
+          if [ "$status" -ne 124 ]; then
+            echo "Minecraft client exited before the smoke-test timeout (exit $status)."
+            exit "$status"
+          fi
+          echo "Minecraft client remained running for the remote startup smoke test."
+      - name: Upload mod JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: billys-mods-${{ github.sha }}
+          path: build/libs/*.jar
+          if-no-files-found: error
+          retention-days: 30
