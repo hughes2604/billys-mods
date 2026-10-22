@@ -73,7 +73,16 @@ public final class ViltrumiteClient implements ClientModInitializer {
             while (raiseBoostLevel.consumeClick()) {
                 ClientPlayNetworking.send(new FlightTogglePayload(3));
             }
-            boolean boostDown = FlightClientState.isFlying(client.player.getId()) && flightBoost.isDown();
+            boolean flightActive = FlightClientState.isFlying(client.player.getId());
+            if (flightActive) {
+                float forward = (client.options.keyUp.isDown() ? 1.0F : 0.0F)
+                        - (client.options.keyDown.isDown() ? 1.0F : 0.0F);
+                float strafe = (client.options.keyRight.isDown() ? 1.0F : 0.0F)
+                        - (client.options.keyLeft.isDown() ? 1.0F : 0.0F);
+                ClientPlayNetworking.send(new FlightTogglePayload(5, forward, strafe,
+                        client.options.keyJump.isDown(), client.options.keyShift.isDown()));
+            }
+            boolean boostDown = flightActive && flightBoost.isDown();
             if (boostDown != boostWasDown) {
                 ClientPlayNetworking.send(new FlightTogglePayload(boostDown ? 1 : 2));
                 boostWasDown = boostDown;
