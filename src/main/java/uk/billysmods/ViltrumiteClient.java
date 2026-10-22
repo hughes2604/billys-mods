@@ -23,8 +23,7 @@ public final class ViltrumiteClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        KeyMapping.Category category = KeyMapping.Category.register(
-                ResourceLocation.fromNamespaceAndPath(BillysMods.MOD_ID, "flight"));
+        String category = "category.billys-mods.flight";
         flightToggle = register("key.billys-mods.toggle_flight", GLFW.GLFW_KEY_G, category);
         flightBoost = register("key.billys-mods.flight_boost", GLFW.GLFW_KEY_LEFT_CONTROL, category);
         lowerBoostLevel = register("key.billys-mods.lower_boost_level", GLFW.GLFW_KEY_LEFT_BRACKET, category);
@@ -55,7 +54,6 @@ public final class ViltrumiteClient implements ClientModInitializer {
                 for (Player player : client.level.players()) {
                     if (FlightClientState.isFlying(player.getId())) {
                         // Reset vanilla limb animation after entity ticks and before rendering.
-                        player.walkAnimation.stop();
                     }
                 }
             }
@@ -83,7 +81,7 @@ public final class ViltrumiteClient implements ClientModInitializer {
         });
     }
 
-    private static KeyMapping register(String translationKey, int key, KeyMapping.Category category) {
+    private static KeyMapping register(String translationKey, int key, String category) {
         return KeyBindingHelper.registerKeyBinding(new KeyMapping(
                 translationKey, InputConstants.Type.KEYSYM, key, category));
     }
