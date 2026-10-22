@@ -121,9 +121,9 @@ public final class ViltrumiteGenome {
     }
 
     public static void stopFlightOnDisconnect(ServerPlayer player) {
-        Integer stage = FLIGHT_SPEED.get(player.getUUID());
-        if (stage != null) {
-            stopFlight(player, player.getUUID());
+        if (FLIGHT_SPEED.remove(player.getUUID()) != null) {
+            player.setNoGravity(false);
+            player.stopFallFlying();
         }
     }
 
