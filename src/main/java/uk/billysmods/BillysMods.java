@@ -170,6 +170,10 @@ public final class BillysMods implements ModInitializer {
                 return true;
             }
 
+            if (source.is(DamageTypes.FALL)) {
+                return false;
+            }
+
             if (source.getDirectEntity() instanceof AbstractArrow arrow) {
                 arrow.deflect(ProjectileDeflection.REVERSE, target, EntityReference.of(target), false);
                 return false;

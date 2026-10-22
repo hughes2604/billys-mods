@@ -17,6 +17,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 
 public final class ViltrumiteGenome {
     private static final ResourceLocation ATTACK_DAMAGE_ID = id("genome_strength");
@@ -128,7 +129,7 @@ public final class ViltrumiteGenome {
     }
 
     public static void syncFlightState(ServerPlayer viewer) {
-        for (ServerPlayer subject : viewer.server.getPlayerList().getPlayers()) {
+        for (ServerPlayer subject : viewer.getServer().getPlayerList().getPlayers()) {
             if (FLIGHT_SPEED.containsKey(subject.getUUID()) && subject.level() == viewer.level()) {
                 ServerPlayNetworking.send(viewer, new FlightStatePayload(subject.getId(), true));
             }
@@ -142,7 +143,7 @@ public final class ViltrumiteGenome {
     }
 
     private static void publishFlightState(ServerPlayer subject, boolean active) {
-        for (ServerPlayer viewer : subject.server.getPlayerList().getPlayers()) {
+        for (ServerPlayer viewer : subject.getServer().getPlayerList().getPlayers()) {
             if (viewer.level() == subject.level()) {
                 ServerPlayNetworking.send(viewer, new FlightStatePayload(subject.getId(), active));
             }
