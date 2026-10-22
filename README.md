@@ -11,12 +11,12 @@ The current mod version is **0.2.0-alpha.2**.
 
 ## Current features
 
-- **Elixir of Life**: drink it to gain persistent immortality. You can be reduced to half a heart, but cannot be killed while the effect is active.
+- **Elixir of Life**: drink it to gain persistent immortality. You can be reduced to half a heart, but cannot be killed while the effect is active. Milk cannot remove it.
 - **Elixir of Mortality**: drink it to remove immortality.
 - **Viltrumite Genome**: while carried anywhere in your main inventory, armor slots, or offhand, it grants super strength, high durability, and self-propelled flight.
-  - Strength raises unarmed attack damage to 20 before armor, adds heavy knockback, and gives successful hits a strong impact sound and a short burst of particles.
-  - Durability deflects arrows, prevents damage from unarmed player attacks, and adds substantial armor and toughness against other physical damage.
-  - To fly, press the configurable **Toggle Viltrumite Flight** key (default **G**). Press it again to disable flight. Look to steer, hold jump to rise, and sneak to descend. Movement eases off when you release directional controls. The player uses Minecraft's horizontal gliding animation; directional steering follows the camera.
+  - Strength raises unarmed attack damage to 50 before armor, adds heavy knockback, and gives successful hits a strong impact sound and a short burst of particles.
+  - Durability deflects arrows, prevents damage from unarmed player attacks, adds 20 armor, 12 armor toughness, 20 maximum health, and continuously refreshed Resistance IV.
+  - Press the configurable **Toggle Viltrumite Flight** key (default **G**) to toggle flight. **Page Up** and **Page Down** select one of five speed stages. Stage 1 is a slow upright float; stage 5 uses the Superman glide pose. WASD steers and works independently from vertical movement; jump rises and sneak descends. Controls can be changed in the Controls menu.
 - All items are in the **Billy's Mods** creative tab.
 
 ## Download the mod
@@ -27,7 +27,7 @@ Use Minecraft 1.21.10 with Fabric Loader 0.19.5 and Fabric API 0.138.4+1.21.10.
 
 ## Multiplayer
 
-Install Billy's Mods and Fabric API on the server and on each client. Ability checks and damage handling run on the server. The client entrypoint supplies the configurable flight keybind; movement and flight state are handled on the server.
+Install Billy's Mods and Fabric API on the server and on each client. Ability checks, damage handling, and flight state run on the server. The client entrypoint supplies configurable keybinds for flight and speed.
 
 ## Build requirements
 
