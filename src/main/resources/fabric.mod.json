@@ -7,7 +7,6 @@
   "authors": ["Billy"],
   "license": "MIT",
   "environment": "*",
-  "mixins": ["billys-mods.mixins.json"],
   "entrypoints": {
     "main": ["uk.billysmods.BillysMods"],
     "client": ["uk.billysmods.ViltrumiteClient"]
