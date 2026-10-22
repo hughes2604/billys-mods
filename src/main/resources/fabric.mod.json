@@ -11,10 +11,14 @@
     "main": ["uk.billysmods.BillysMods"],
     "client": ["uk.billysmods.ViltrumiteClient"]
   },
+  "mixins": ["billys-mods.mixins.json"],
   "depends": {
     "fabricloader": ">=0.19.5",
-    "minecraft": "~1.21.10",
+    "minecraft": "~1.21.1",
     "java": ">=21",
     "fabric-api": "*"
+  },
+  "suggests": {
+    "ad_astra": "*"
   }
 }
