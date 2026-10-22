@@ -2,15 +2,16 @@ package uk.billysmods.mixin;
 
 import net.minecraft.client.model.PlayerModel;
 import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.client.renderer.entity.state.AvatarRenderState;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Items;
-import uk.billysmods.FlightClientState;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import uk.billysmods.FlightClientState;
 
 @Mixin(PlayerModel.class)
 public abstract class PlayerModelMixin {
@@ -21,28 +22,23 @@ public abstract class PlayerModelMixin {
     @Shadow @Final public ModelPart leftLeg;
 
     @Inject(method = "setupAnim", at = @At("TAIL"))
-    private void billysMods$applyViltrumiteFlightPose(AvatarRenderState state, CallbackInfo callbackInfo) {
-        if (!FlightClientState.isFlying(state.id)) {
+    private void billysMods$applyViltrumiteFlightPose(LivingEntity entity, float limbSwing, float limbSwingAmount,
+                                                       float ageInTicks, float netHeadYaw, float headPitch,
+                                                       CallbackInfo ci) {
+        if (!FlightClientState.isFlying(entity.getId())) return;
+        if (!entity.isFallFlying() || entity.getItemBySlot(EquipmentSlot.CHEST).is(Items.ELYTRA)) {
+            rightLeg.xRot = 0.04F;
+            leftLeg.xRot = 0.04F;
+            rightLeg.yRot = 0.0F;
+            leftLeg.yRot = 0.0F;
+            rightLeg.zRot = 0.015F;
+            leftLeg.zRot = -0.015F;
             return;
         }
-
-        // Keep hovering legs still after vanilla has applied its walking animation.
-        if (!state.isFallFlying || state.chestEquipment.is(Items.ELYTRA)) {
-            this.rightLeg.xRot = 0.04F;
-            this.leftLeg.xRot = 0.04F;
-            this.rightLeg.yRot = 0.0F;
-            this.leftLeg.yRot = 0.0F;
-            this.rightLeg.zRot = 0.015F;
-            this.leftLeg.zRot = -0.015F;
-            return;
-        }
-
-        // Minecraft 1.21.10 renders players from AvatarRenderState rather than the live Player entity.
-        float bank = Math.max(-0.48F, Math.min(0.48F, state.flyingYRot * 0.018F));
-        this.body.zRot = bank;
-        this.rightArm.zRot -= bank * 0.35F;
-        this.leftArm.zRot -= bank * 0.35F;
-        this.rightLeg.zRot = bank * 0.20F;
-        this.leftLeg.zRot = bank * 0.20F;
+        body.zRot = 0.0F;
+        rightArm.zRot = -0.08F;
+        leftArm.zRot = 0.08F;
+        rightLeg.zRot = 0.0F;
+        leftLeg.zRot = 0.0F;
     }
 }
