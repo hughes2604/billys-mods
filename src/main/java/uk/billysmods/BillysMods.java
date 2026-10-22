@@ -208,7 +208,7 @@ public final class BillysMods implements ModInitializer {
             level.sendParticles(ParticleTypes.POOF, entity.getX(), entity.getY() + entity.getBbHeight() * 0.45D,
                     entity.getZ(), 4, 0.14D, 0.18D, 0.14D, 0.02D);
             ViltrumiteGenome.pulsePunchFov(attacker);
-            entity.knockback(0.45D, attacker.getX() - entity.getX(), attacker.getZ() - entity.getZ());
+            entity.knockback(0.65D, attacker.getX() - entity.getX(), attacker.getZ() - entity.getZ());
         });
 
         LOGGER.info("Billy's Mods loaded");

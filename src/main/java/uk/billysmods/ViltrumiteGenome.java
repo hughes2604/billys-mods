@@ -31,10 +31,12 @@ public final class ViltrumiteGenome {
     private static final ResourceLocation MAX_HEALTH_ID = id("genome_vitality");
     private static final Set<UUID> FLIGHT_ACTIVE = new HashSet<>();
     private static final Set<UUID> FLIGHT_BOOSTING = new HashSet<>();
+    private static final Map<UUID, Integer> BOOST_LEVELS = new HashMap<>();
     private static final Map<UUID, Boolean> SPRINT_BEFORE_FLIGHT_BOOST = new HashMap<>();
     private static final Map<UUID, Integer> PUNCH_FOV_TICKS = new HashMap<>();
     private static final double CRUISE_SPEED = 1.10D;
-    private static final double BOOST_SPEED = 3.70D;
+    private static final double[] BOOST_SPEEDS = {3.70D, 4.00D, 4.35D, 4.70D};
+    private static final int MAX_BOOST_LEVEL = BOOST_SPEEDS.length;
     private static final double REVERSE_SPEED = 0.90D;
     private static final double SUPERMAN_ENTRY_SPEED = 1.18D;
     private static final double SUPERMAN_EXIT_SPEED = 0.92D;
@@ -57,17 +59,17 @@ public final class ViltrumiteGenome {
 
     public static void tickServer(ServerPlayer player) {
         boolean empowered = hasGenome(player);
-        setModifier(player, Attributes.ATTACK_DAMAGE, ATTACK_DAMAGE_ID, 7.0D,
+        setModifier(player, Attributes.ATTACK_DAMAGE, ATTACK_DAMAGE_ID, 39.0D,
                 empowered && isUnarmed(player));
-        setModifier(player, Attributes.ATTACK_KNOCKBACK, ATTACK_KNOCKBACK_ID, 2.5D,
+        setModifier(player, Attributes.ATTACK_KNOCKBACK, ATTACK_KNOCKBACK_ID, 3.5D,
                 empowered && isUnarmed(player));
-        setModifier(player, Attributes.ARMOR, ARMOR_ID, 20.0D, empowered);
-        setModifier(player, Attributes.ARMOR_TOUGHNESS, TOUGHNESS_ID, 12.0D, empowered);
-        setModifier(player, Attributes.MAX_HEALTH, MAX_HEALTH_ID, 20.0D, empowered);
+        setModifier(player, Attributes.ARMOR, ARMOR_ID, 12.0D, empowered);
+        setModifier(player, Attributes.ARMOR_TOUGHNESS, TOUGHNESS_ID, 8.0D, empowered);
+        setMaxHealthModifier(player, empowered);
         if (empowered) {
             MobEffectInstance resistance = player.getEffect(MobEffects.RESISTANCE);
-            if (resistance == null || resistance.getAmplifier() < 3 || resistance.getDuration() <= 20) {
-                player.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 40, 3, false, false, false));
+            if (resistance == null || resistance.getAmplifier() < 1 || resistance.getDuration() <= 20) {
+                player.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 40, 1, false, false, false));
             }
         }
         tickPunchFov(player);
@@ -94,6 +96,33 @@ public final class ViltrumiteGenome {
         }
     }
 
+    private static void setMaxHealthModifier(Player player, boolean enabled) {
+        AttributeInstance instance = player.getAttribute(Attributes.MAX_HEALTH);
+        if (instance == null) {
+            return;
+        }
+        AttributeModifier existing = instance.getModifier(MAX_HEALTH_ID);
+        if (enabled && existing == null) {
+            boolean wasAtFullHealth = player.getHealth() >= instance.getValue() - 0.01F;
+            instance.addTransientModifier(new AttributeModifier(
+                    MAX_HEALTH_ID, 80.0D, AttributeModifier.Operation.ADD_VALUE));
+            if (wasAtFullHealth) {
+                player.setHealth((float) instance.getValue());
+            }
+        } else if (!enabled && existing != null) {
+            instance.removeModifier(MAX_HEALTH_ID);
+            player.setHealth(Math.min(player.getHealth(), (float) instance.getValue()));
+        }
+    }
+
+    private static int getBoostLevel(UUID playerId) {
+        return BOOST_LEVELS.getOrDefault(playerId, 1);
+    }
+
+    private static double getBoostSpeed(UUID playerId) {
+        return BOOST_SPEEDS[getBoostLevel(playerId) - 1];
+    }
+
     public static boolean isUnarmed(Player player) {
         return player.getMainHandItem().isEmpty() && player.getOffhandItem().isEmpty();
     }
@@ -113,6 +142,15 @@ public final class ViltrumiteGenome {
                 publishFlightState(player, true);
                 player.displayClientMessage(Component.literal("VILTRUMITE FLIGHT ON").withStyle(ChatFormatting.AQUA), true);
             }
+            return;
+        }
+
+        if (action == 3 || action == 4) {
+            int direction = action == 3 ? 1 : -1;
+            int nextLevel = Math.max(1, Math.min(MAX_BOOST_LEVEL, getBoostLevel(playerId) + direction));
+            BOOST_LEVELS.put(playerId, nextLevel);
+            player.displayClientMessage(Component.literal("BOOST LEVEL: " + nextLevel + "/" + MAX_BOOST_LEVEL)
+                    .withStyle(ChatFormatting.AQUA), true);
             return;
         }
 
@@ -156,6 +194,7 @@ public final class ViltrumiteGenome {
 
     public static void stopFlightOnDisconnect(ServerPlayer player) {
         UUID playerId = player.getUUID();
+        BOOST_LEVELS.remove(playerId);
         if (FLIGHT_ACTIVE.remove(playerId)) {
             FLIGHT_BOOSTING.remove(playerId);
             restoreSprintAfterBoost(player, playerId);
@@ -224,7 +263,7 @@ public final class ViltrumiteGenome {
         boolean reversing = forwardInput < 0.0D;
         if (direction.lengthSqr() >= 1.0E-4D) {
             double topSpeed = reversing ? REVERSE_SPEED
-                    : (FLIGHT_BOOSTING.contains(playerId) && forwardInput > 0.0D ? BOOST_SPEED : CRUISE_SPEED);
+                    : (FLIGHT_BOOSTING.contains(playerId) && forwardInput > 0.0D ? getBoostSpeed(playerId) : CRUISE_SPEED);
             desired = direction.normalize().scale(topSpeed);
         }
         boolean boostingForward = FLIGHT_BOOSTING.contains(playerId) && forwardInput > 0.0D;

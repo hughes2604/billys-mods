@@ -17,6 +17,8 @@ import org.lwjgl.glfw.GLFW;
 public final class ViltrumiteClient implements ClientModInitializer {
     private static KeyMapping flightToggle;
     private static KeyMapping flightBoost;
+    private static KeyMapping lowerBoostLevel;
+    private static KeyMapping raiseBoostLevel;
     private static boolean boostWasDown;
 
     @Override
@@ -25,6 +27,8 @@ public final class ViltrumiteClient implements ClientModInitializer {
                 ResourceLocation.fromNamespaceAndPath(BillysMods.MOD_ID, "flight"));
         flightToggle = register("key.billys-mods.toggle_flight", GLFW.GLFW_KEY_G, category);
         flightBoost = register("key.billys-mods.flight_boost", GLFW.GLFW_KEY_LEFT_CONTROL, category);
+        lowerBoostLevel = register("key.billys-mods.lower_boost_level", GLFW.GLFW_KEY_LEFT_BRACKET, category);
+        raiseBoostLevel = register("key.billys-mods.raise_boost_level", GLFW.GLFW_KEY_RIGHT_BRACKET, category);
 
         ClientPlayNetworking.registerGlobalReceiver(FlightStatePayload.TYPE,
                 (payload, context) -> context.client().execute(() -> {
@@ -64,6 +68,12 @@ public final class ViltrumiteClient implements ClientModInitializer {
             }
             while (flightToggle.consumeClick()) {
                 ClientPlayNetworking.send(new FlightTogglePayload(0));
+            }
+            while (lowerBoostLevel.consumeClick()) {
+                ClientPlayNetworking.send(new FlightTogglePayload(4));
+            }
+            while (raiseBoostLevel.consumeClick()) {
+                ClientPlayNetworking.send(new FlightTogglePayload(3));
             }
             boolean boostDown = FlightClientState.isFlying(client.player.getId()) && flightBoost.isDown();
             if (boostDown != boostWasDown) {
