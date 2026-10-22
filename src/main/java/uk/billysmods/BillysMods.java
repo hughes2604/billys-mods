@@ -9,6 +9,7 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -24,6 +25,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -116,7 +118,13 @@ public final class BillysMods implements ModInitializer {
     public void onInitialize() {
         PayloadTypeRegistry.playC2S().register(FlightTogglePayload.TYPE, FlightTogglePayload.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(FlightTogglePayload.TYPE,
-                (payload, context) -> ViltrumiteGenome.toggleFlight(context.player()));
+                (payload, context) -> ViltrumiteGenome.handleFlightControl(context.player(), payload.action()));
+
+        UseItemCallback.EVENT.register((player, level, hand) ->
+                player.hasEffect(ElixirItem.IMMORTALITY)
+                        && player.getItemInHand(hand).is(Items.MILK_BUCKET)
+                        ? InteractionResult.FAIL
+                        : InteractionResult.PASS);
 
         ItemGroupEvents.modifyEntriesEvent(ITEM_GROUP_KEY).register(entries -> {
             entries.accept(ELIXIR_OF_LIFE);

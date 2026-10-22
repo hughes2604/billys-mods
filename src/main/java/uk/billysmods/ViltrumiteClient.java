@@ -12,24 +12,35 @@ import org.lwjgl.glfw.GLFW;
 /** Client keybinds send requests; flight state and movement remain server authoritative. */
 public final class ViltrumiteClient implements ClientModInitializer {
     private static KeyMapping flightToggle;
+    private static KeyMapping fasterFlight;
+    private static KeyMapping slowerFlight;
 
     @Override
     public void onInitializeClient() {
         KeyMapping.Category category = KeyMapping.Category.register(
                 ResourceLocation.fromNamespaceAndPath(BillysMods.MOD_ID, "flight"));
-        flightToggle = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-                "key.billys-mods.toggle_flight",
-                InputConstants.Type.KEYSYM,
-                GLFW.GLFW_KEY_G,
-                category
-        ));
+        flightToggle = register("key.billys-mods.toggle_flight", GLFW.GLFW_KEY_G, category);
+        fasterFlight = register("key.billys-mods.flight_faster", GLFW.GLFW_KEY_PAGE_UP, category);
+        slowerFlight = register("key.billys-mods.flight_slower", GLFW.GLFW_KEY_PAGE_DOWN, category);
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (client.player == null || client.screen != null) {
+                return;
+            }
             while (flightToggle.consumeClick()) {
-                if (client.player != null && client.screen == null) {
-                    ClientPlayNetworking.send(new FlightTogglePayload());
-                }
+                ClientPlayNetworking.send(new FlightTogglePayload(0));
+            }
+            while (fasterFlight.consumeClick()) {
+                ClientPlayNetworking.send(new FlightTogglePayload(1));
+            }
+            while (slowerFlight.consumeClick()) {
+                ClientPlayNetworking.send(new FlightTogglePayload(-1));
             }
         });
+    }
+
+    private static KeyMapping register(String translationKey, int key, KeyMapping.Category category) {
+        return KeyBindingHelper.registerKeyBinding(new KeyMapping(
+                translationKey, InputConstants.Type.KEYSYM, key, category));
     }
 }

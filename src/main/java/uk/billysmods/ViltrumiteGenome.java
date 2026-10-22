@@ -1,8 +1,15 @@
 package uk.billysmods;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -10,15 +17,15 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 public final class ViltrumiteGenome {
     private static final ResourceLocation ATTACK_DAMAGE_ID = id("genome_strength");
     private static final ResourceLocation ATTACK_KNOCKBACK_ID = id("genome_knockback");
     private static final ResourceLocation ARMOR_ID = id("genome_durability");
     private static final ResourceLocation TOUGHNESS_ID = id("genome_toughness");
-    private static final Set<java.util.UUID> FLIGHT_ENABLED = ConcurrentHashMap.newKeySet();
+    private static final ResourceLocation MAX_HEALTH_ID = id("genome_vitality");
+    private static final Map<UUID, Integer> FLIGHT_SPEED = new HashMap<>();
+    private static final double[] FLIGHT_SPEEDS = {0.0D, 0.22D, 0.40D, 0.62D, 0.88D, 1.20D};
 
     private ViltrumiteGenome() { }
 
@@ -38,10 +45,17 @@ public final class ViltrumiteGenome {
 
     public static void tickServer(ServerPlayer player) {
         boolean empowered = hasGenome(player);
-        setModifier(player, Attributes.ATTACK_DAMAGE, ATTACK_DAMAGE_ID, 19.0D, empowered);
-        setModifier(player, Attributes.ATTACK_KNOCKBACK, ATTACK_KNOCKBACK_ID, 1.5D, empowered);
+        setModifier(player, Attributes.ATTACK_DAMAGE, ATTACK_DAMAGE_ID, 49.0D, empowered);
+        setModifier(player, Attributes.ATTACK_KNOCKBACK, ATTACK_KNOCKBACK_ID, 2.5D, empowered);
         setModifier(player, Attributes.ARMOR, ARMOR_ID, 20.0D, empowered);
-        setModifier(player, Attributes.ARMOR_TOUGHNESS, TOUGHNESS_ID, 8.0D, empowered);
+        setModifier(player, Attributes.ARMOR_TOUGHNESS, TOUGHNESS_ID, 12.0D, empowered);
+        setModifier(player, Attributes.MAX_HEALTH, MAX_HEALTH_ID, 20.0D, empowered);
+        if (empowered) {
+            MobEffectInstance resistance = player.getEffect(MobEffects.RESISTANCE);
+            if (resistance == null || resistance.getAmplifier() < 3 || resistance.getDuration() <= 20) {
+                player.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 40, 3, false, false, false));
+            }
+        }
         tickFlight(player);
     }
 
@@ -65,65 +79,97 @@ public final class ViltrumiteGenome {
         }
     }
 
-    public static void toggleFlight(ServerPlayer player) {
+    public static void handleFlightControl(ServerPlayer player, int action) {
         if (!hasGenome(player)) {
             return;
         }
-        java.util.UUID playerId = player.getUUID();
-        if (FLIGHT_ENABLED.remove(playerId)) {
-            player.setNoGravity(false);
-            player.stopFallFlying();
-            return;
-        }
-        FLIGHT_ENABLED.add(playerId);
-        player.startFallFlying();
-        player.setNoGravity(true);
-    }
-
-    private static void tickFlight(ServerPlayer player) {
-        if (!hasGenome(player)) {
-            if (FLIGHT_ENABLED.remove(player.getUUID())) {
-                player.setNoGravity(false);
+        UUID playerId = player.getUUID();
+        Integer current = FLIGHT_SPEED.get(playerId);
+        if (action == 0) {
+            if (current != null) {
+                stopFlight(player, playerId);
+                player.displayClientMessage(Component.literal("VILTRUMITE FLIGHT OFF")
+                        .withStyle(ChatFormatting.GRAY), true);
+            } else {
+                FLIGHT_SPEED.put(playerId, 1);
+                player.setNoGravity(true);
                 player.stopFallFlying();
+                showFlightSpeed(player, 1);
             }
             return;
         }
-        if (!FLIGHT_ENABLED.contains(player.getUUID())) {
+        if (current == null) {
+            return;
+        }
+        int next = Math.max(1, Math.min(5, current + Integer.signum(action)));
+        if (next != current) {
+            FLIGHT_SPEED.put(playerId, next);
+            player.setNoGravity(true);
+            if (next == 5) {
+                player.startFallFlying();
+            } else {
+                player.stopFallFlying();
+            }
+            showFlightSpeed(player, next);
+        }
+    }
+
+    private static void showFlightSpeed(ServerPlayer player, int speed) {
+        String pose = speed == 5 ? "  •  SUPERMAN FLIGHT" : "  •  FLOAT";
+        player.displayClientMessage(Component.literal("FLIGHT SPEED " + speed + "/5" + pose)
+                .withStyle(ChatFormatting.AQUA), true);
+    }
+
+    private static void stopFlight(ServerPlayer player, UUID playerId) {
+        FLIGHT_SPEED.remove(playerId);
+        player.setNoGravity(false);
+        player.stopFallFlying();
+        player.setDeltaMovement(player.getDeltaMovement().scale(0.2D));
+    }
+
+    private static void tickFlight(ServerPlayer player) {
+        UUID playerId = player.getUUID();
+        Integer stage = FLIGHT_SPEED.get(playerId);
+        if (!hasGenome(player)) {
+            if (stage != null) {
+                stopFlight(player, playerId);
+            }
+            return;
+        }
+        if (stage == null) {
             return;
         }
 
-        Input input = player.getLastClientInput();
-        if (!player.isFallFlying()) {
-            player.startFallFlying();
-        }
         player.setNoGravity(true);
-        Vec3 look = player.getLookAngle();
-        Vec3 right = new Vec3(look.z, 0.0D, -look.x);
-        if (right.lengthSqr() > 1.0E-6D) {
-            right = right.normalize();
-        } else {
-            right = new Vec3(1.0D, 0.0D, 0.0D);
+        if (stage == 5) {
+            if (!player.isFallFlying()) {
+                player.startFallFlying();
+            }
+        } else if (player.isFallFlying()) {
+            player.stopFallFlying();
         }
 
-        double forward = (input.forward() ? 1.0D : 0.0D) - (input.backward() ? 1.0D : 0.0D);
-        double strafe = (input.right() ? 1.0D : 0.0D) - (input.left() ? 1.0D : 0.0D);
-        Vec3 flightInput = look.scale(forward).add(right.scale(strafe));
-        if (input.jump()) {
-            flightInput = flightInput.add(0.0D, 0.55D, 0.0D);
-        }
-        if (input.shift()) {
-            flightInput = flightInput.add(0.0D, -0.55D, 0.0D);
-        }
-
+        Input input = player.getLastClientInput();
+        float yawRadians = player.getYRot() * ((float) Math.PI / 180.0F);
+        Vec3 forward = new Vec3(-Math.sin(yawRadians), 0.0D, Math.cos(yawRadians));
+        Vec3 right = new Vec3(forward.z, 0.0D, -forward.x);
+        double forwardInput = (input.forward() ? 1.0D : 0.0D) - (input.backward() ? 1.0D : 0.0D);
+        double strafeInput = (input.right() ? 1.0D : 0.0D) - (input.left() ? 1.0D : 0.0D);
+        double verticalInput = (input.jump() ? 1.0D : 0.0D) - (input.shift() ? 1.0D : 0.0D);
+        Vec3 direction = forward.scale(forwardInput)
+                .add(right.scale(strafeInput))
+                .add(0.0D, verticalInput, 0.0D);
         Vec3 velocity = player.getDeltaMovement();
         Vec3 nextVelocity;
-        if (flightInput.lengthSqr() < 1.0E-4D) {
-            nextVelocity = velocity.scale(0.78D);
+        if (direction.lengthSqr() < 1.0E-4D) {
+            nextVelocity = velocity.scale(stage == 1 ? 0.94D : 0.84D);
         } else {
-            Vec3 desiredVelocity = flightInput.normalize().scale(0.9D);
-            nextVelocity = velocity.scale(0.82D).add(desiredVelocity.scale(0.18D));
+            Vec3 desired = direction.normalize().scale(FLIGHT_SPEEDS[stage]);
+            double responsiveness = stage == 1 ? 0.12D : 0.28D;
+            nextVelocity = velocity.scale(1.0D - responsiveness).add(desired.scale(responsiveness));
         }
         player.setDeltaMovement(nextVelocity);
-        player.yBodyRot = player.getYRot() + (float) strafe * 24.0F;
+        player.yBodyRot = player.getYRot() + (float) strafeInput * (stage == 5 ? 30.0F : 12.0F);
+        player.hurtMarked = true;
     }
 }
