@@ -16,7 +16,7 @@ The current mod version is **0.2.0-alpha.2**.
 - **Viltrumite Genome**: while carried anywhere in your main inventory, armor slots, or offhand, it grants super strength, high durability, and self-propelled flight.
   - Strength raises unarmed attack damage to 20 before armor, adds heavy knockback, and gives successful hits a strong impact sound and a short burst of particles.
   - Durability deflects arrows, prevents damage from unarmed player attacks, and adds substantial armor and toughness against other physical damage.
-  - To fly, press the configurable **Toggle Viltrumite Flight** key (default **G**). Press it again to disable flight. Look to steer, hold jump to rise, and sneak to descend. Movement eases off when you release directional controls. The pose uses Minecraft's horizontal gliding animation with a subtle bank while turning.
+  - To fly, press the configurable **Toggle Viltrumite Flight** key (default **G**). Press it again to disable flight. Look to steer, hold jump to rise, and sneak to descend. Movement eases off when you release directional controls. The player uses Minecraft's horizontal gliding animation; directional steering follows the camera.
 - All items are in the **Billy's Mods** creative tab.
 
 ## Download the mod
