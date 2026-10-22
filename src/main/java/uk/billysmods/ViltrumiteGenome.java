@@ -1,7 +1,9 @@
 package uk.billysmods;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
@@ -18,6 +20,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.core.particles.ParticleTypes;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 
 public final class ViltrumiteGenome {
@@ -26,8 +29,15 @@ public final class ViltrumiteGenome {
     private static final ResourceLocation ARMOR_ID = id("genome_durability");
     private static final ResourceLocation TOUGHNESS_ID = id("genome_toughness");
     private static final ResourceLocation MAX_HEALTH_ID = id("genome_vitality");
-    private static final Map<UUID, Integer> FLIGHT_SPEED = new HashMap<>();
-    private static final double[] FLIGHT_SPEEDS = {0.0D, 0.36D, 0.95D, 2.40D};
+    private static final Set<UUID> FLIGHT_ACTIVE = new HashSet<>();
+    private static final Set<UUID> FLIGHT_BOOSTING = new HashSet<>();
+    private static final Map<UUID, Boolean> SPRINT_BEFORE_FLIGHT_BOOST = new HashMap<>();
+    private static final Map<UUID, Integer> PUNCH_FOV_TICKS = new HashMap<>();
+    private static final double CRUISE_SPEED = 1.10D;
+    private static final double BOOST_SPEED = 3.35D;
+    private static final double REVERSE_SPEED = 0.90D;
+    private static final double SUPERMAN_ENTRY_SPEED = 1.18D;
+    private static final double SUPERMAN_EXIT_SPEED = 0.92D;
 
     private ViltrumiteGenome() { }
 
@@ -47,8 +57,10 @@ public final class ViltrumiteGenome {
 
     public static void tickServer(ServerPlayer player) {
         boolean empowered = hasGenome(player);
-        setModifier(player, Attributes.ATTACK_DAMAGE, ATTACK_DAMAGE_ID, 49.0D, empowered);
-        setModifier(player, Attributes.ATTACK_KNOCKBACK, ATTACK_KNOCKBACK_ID, 2.5D, empowered);
+        setModifier(player, Attributes.ATTACK_DAMAGE, ATTACK_DAMAGE_ID, 7.0D,
+                empowered && isUnarmed(player));
+        setModifier(player, Attributes.ATTACK_KNOCKBACK, ATTACK_KNOCKBACK_ID, 2.5D,
+                empowered && isUnarmed(player));
         setModifier(player, Attributes.ARMOR, ARMOR_ID, 20.0D, empowered);
         setModifier(player, Attributes.ARMOR_TOUGHNESS, TOUGHNESS_ID, 12.0D, empowered);
         setModifier(player, Attributes.MAX_HEALTH, MAX_HEALTH_ID, 20.0D, empowered);
@@ -58,6 +70,7 @@ public final class ViltrumiteGenome {
                 player.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 40, 3, false, false, false));
             }
         }
+        tickPunchFov(player);
         tickFlight(player);
     }
 
@@ -81,45 +94,64 @@ public final class ViltrumiteGenome {
         }
     }
 
+    public static boolean isUnarmed(Player player) {
+        return player.getMainHandItem().isEmpty() && player.getOffhandItem().isEmpty();
+    }
+
     public static void handleFlightControl(ServerPlayer player, int action) {
-        if (!hasGenome(player)) {
-            return;
-        }
+        if (!hasGenome(player)) return;
         UUID playerId = player.getUUID();
-        Integer current = FLIGHT_SPEED.get(playerId);
+
         if (action == 0) {
-            if (current != null) {
+            if (FLIGHT_ACTIVE.contains(playerId)) {
                 stopFlight(player, playerId);
-                player.displayClientMessage(Component.literal("VILTRUMITE FLIGHT OFF")
-                        .withStyle(ChatFormatting.GRAY), true);
+                player.displayClientMessage(Component.literal("VILTRUMITE FLIGHT OFF").withStyle(ChatFormatting.GRAY), true);
             } else {
-                FLIGHT_SPEED.put(playerId, 1);
+                FLIGHT_ACTIVE.add(playerId);
                 player.setNoGravity(true);
                 player.stopFallFlying();
                 publishFlightState(player, true);
-                showFlightSpeed(player, 1);
+                player.displayClientMessage(Component.literal("VILTRUMITE FLIGHT ON").withStyle(ChatFormatting.AQUA), true);
             }
             return;
         }
-        if (current == null) {
-            return;
-        }
-        int next = Math.max(1, Math.min(3, current + Integer.signum(action)));
-        if (next != current) {
-            FLIGHT_SPEED.put(playerId, next);
-            player.setNoGravity(true);
-            showFlightSpeed(player, next);
+
+        if (!FLIGHT_ACTIVE.contains(playerId)) return;
+        if (action == 1 && FLIGHT_BOOSTING.add(playerId)) {
+            SPRINT_BEFORE_FLIGHT_BOOST.put(playerId, player.isSprinting());
+            player.setSprinting(true);
+            publishFlightState(player, true);
+        } else if (action == 2 && FLIGHT_BOOSTING.remove(playerId)) {
+            restoreSprintAfterBoost(player, playerId);
+            publishFlightState(player, true);
         }
     }
 
-    private static void showFlightSpeed(ServerPlayer player, int speed) {
-        String label = switch (speed) {
-            case 1 -> "HOVER";
-            case 2 -> "CRUISE";
-            default -> "FULL THRUST";
-        };
-        player.displayClientMessage(Component.literal("FLIGHT SPEED " + speed + "/3  •  " + label)
-                .withStyle(ChatFormatting.AQUA), true);
+    private static void restoreSprintAfterBoost(ServerPlayer player, UUID playerId) {
+        Boolean wasSprinting = SPRINT_BEFORE_FLIGHT_BOOST.remove(playerId);
+        if (Boolean.FALSE.equals(wasSprinting) && !PUNCH_FOV_TICKS.containsKey(playerId)) {
+            player.setSprinting(false);
+        }
+    }
+
+    public static void pulsePunchFov(ServerPlayer player) {
+        UUID playerId = player.getUUID();
+        if (!player.isSprinting() && !FLIGHT_BOOSTING.contains(playerId)) {
+            player.setSprinting(true);
+            PUNCH_FOV_TICKS.put(playerId, 4);
+        }
+    }
+
+    private static void tickPunchFov(ServerPlayer player) {
+        UUID playerId = player.getUUID();
+        Integer ticks = PUNCH_FOV_TICKS.get(playerId);
+        if (ticks == null) return;
+        if (ticks <= 1) {
+            PUNCH_FOV_TICKS.remove(playerId);
+            if (!FLIGHT_BOOSTING.contains(playerId)) player.setSprinting(false);
+        } else {
+            PUNCH_FOV_TICKS.put(playerId, ticks - 1);
+        }
     }
 
     public static void stopFlightOnDisconnect(ServerPlayer player) {
