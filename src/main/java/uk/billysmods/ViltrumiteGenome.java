@@ -25,7 +25,7 @@ public final class ViltrumiteGenome {
     private static final ResourceLocation TOUGHNESS_ID = id("genome_toughness");
     private static final ResourceLocation MAX_HEALTH_ID = id("genome_vitality");
     private static final Map<UUID, Integer> FLIGHT_SPEED = new HashMap<>();
-    private static final double[] FLIGHT_SPEEDS = {0.0D, 0.22D, 0.40D, 0.62D, 0.88D, 1.20D};
+    private static final double[] FLIGHT_SPEEDS = {0.0D, 0.36D, 0.95D, 2.40D};
 
     private ViltrumiteGenome() { }
 
@@ -101,22 +101,21 @@ public final class ViltrumiteGenome {
         if (current == null) {
             return;
         }
-        int next = Math.max(1, Math.min(5, current + Integer.signum(action)));
+        int next = Math.max(1, Math.min(3, current + Integer.signum(action)));
         if (next != current) {
             FLIGHT_SPEED.put(playerId, next);
             player.setNoGravity(true);
-            if (next == 5) {
-                player.startFallFlying();
-            } else {
-                player.stopFallFlying();
-            }
             showFlightSpeed(player, next);
         }
     }
 
     private static void showFlightSpeed(ServerPlayer player, int speed) {
-        String pose = speed == 5 ? "  •  SUPERMAN FLIGHT" : "  •  FLOAT";
-        player.displayClientMessage(Component.literal("FLIGHT SPEED " + speed + "/5" + pose)
+        String label = switch (speed) {
+            case 1 -> "HOVER";
+            case 2 -> "CRUISE";
+            default -> "FULL THRUST";
+        };
+        player.displayClientMessage(Component.literal("FLIGHT SPEED " + speed + "/3  •  " + label)
                 .withStyle(ChatFormatting.AQUA), true);
     }
 
@@ -141,35 +140,40 @@ public final class ViltrumiteGenome {
         }
 
         player.setNoGravity(true);
-        if (stage == 5) {
-            if (!player.isFallFlying()) {
-                player.startFallFlying();
-            }
-        } else if (player.isFallFlying()) {
-            player.stopFallFlying();
-        }
-
         Input input = player.getLastClientInput();
+        Vec3 look = player.getLookAngle().normalize();
         float yawRadians = player.getYRot() * ((float) Math.PI / 180.0F);
-        Vec3 forward = new Vec3(-Math.sin(yawRadians), 0.0D, Math.cos(yawRadians));
-        Vec3 right = new Vec3(forward.z, 0.0D, -forward.x);
+        Vec3 right = new Vec3(Math.cos(yawRadians), 0.0D, Math.sin(yawRadians));
         double forwardInput = (input.forward() ? 1.0D : 0.0D) - (input.backward() ? 1.0D : 0.0D);
         double strafeInput = (input.right() ? 1.0D : 0.0D) - (input.left() ? 1.0D : 0.0D);
         double verticalInput = (input.jump() ? 1.0D : 0.0D) - (input.shift() ? 1.0D : 0.0D);
-        Vec3 direction = forward.scale(forwardInput)
+
+        // Forward/back follow the full view vector, including pitch, like pointing and
+        // throttling an aircraft. Jump/sneak provide direct vertical thrust.
+        Vec3 direction = look.scale(forwardInput)
                 .add(right.scale(strafeInput))
                 .add(0.0D, verticalInput, 0.0D);
         Vec3 velocity = player.getDeltaMovement();
         Vec3 nextVelocity;
         if (direction.lengthSqr() < 1.0E-4D) {
-            nextVelocity = velocity.scale(stage == 1 ? 0.94D : 0.84D);
+            nextVelocity = velocity.scale(stage == 1 ? 0.76D : 0.985D);
         } else {
             Vec3 desired = direction.normalize().scale(FLIGHT_SPEEDS[stage]);
-            double responsiveness = stage == 1 ? 0.12D : 0.28D;
+            double responsiveness = stage == 1 ? 0.20D : (stage == 2 ? 0.16D : 0.18D);
             nextVelocity = velocity.scale(1.0D - responsiveness).add(desired.scale(responsiveness));
         }
+
+        // Use actual velocity with a small hysteresis band, so the pose follows
+        // acceleration and remains off while hovering or stopped.
+        double speed = nextVelocity.length();
+        if (!player.isFallFlying() && speed >= 0.72D) {
+            player.startFallFlying();
+        } else if (player.isFallFlying() && speed <= 0.54D) {
+            player.stopFallFlying();
+        }
+
         player.setDeltaMovement(nextVelocity);
-        player.yBodyRot = player.getYRot() + (float) strafeInput * (stage == 5 ? 30.0F : 12.0F);
+        player.yBodyRot = player.getYRot() + (float) strafeInput * (player.isFallFlying() ? 28.0F : 12.0F);
         player.hurtMarked = true;
     }
 }

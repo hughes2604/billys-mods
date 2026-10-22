@@ -16,7 +16,7 @@ The current mod version is **0.2.0-alpha.2**.
 - **Viltrumite Genome**: while carried anywhere in your main inventory, armor slots, or offhand, it grants super strength, high durability, and self-propelled flight.
   - Strength raises unarmed attack damage to 50 before armor, adds heavy knockback, and gives successful hits a strong impact sound and a short burst of particles.
   - Durability deflects arrows, prevents damage from unarmed player attacks, adds 20 armor, 12 armor toughness, 20 maximum health, and continuously refreshed Resistance IV.
-  - Press the configurable **Toggle Viltrumite Flight** key (default **G**) to toggle flight. **[** lowers and **]** raises the speed across five stages. Stage 1 is a slow upright float; stage 5 uses the Superman glide pose. WASD steers and works independently from vertical movement; jump rises and sneak descends. Controls can be changed in the Controls menu.
+  - Press the configurable **Toggle Viltrumite Flight** key (default **G**) to toggle flight. **[** lowers and **]** raises the speed across three stages: hover, cruise, and full speed. Forward and backward movement follow your full look angle, including pitch. Jump and sneak add vertical thrust. The Superman glide pose engages only above a speed threshold, so a stationary player remains upright. Controls can be changed in the Controls menu.
 - All items are in the **Billy's Mods** creative tab.
 
 ## Download the mod

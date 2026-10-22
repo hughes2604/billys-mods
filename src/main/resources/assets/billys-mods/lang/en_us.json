@@ -8,6 +8,6 @@
   "item.billys-mods.elixir_of_mortality": "Elixir of Mortality",
   "item.billys-mods.viltrumite_genome": "Viltrumite Genome",
   "item.billys-mods.viltrumite_genome.description": "Grants Viltrumite strength and durability, plus self-propelled flight while carried.",
-  "item.billys-mods.viltrumite_genome.flight_help": "G toggles flight. [ and ] select one of five speeds. Stage 1 floats upright; stage 5 uses a Superman glide. WASD steers; jump rises and sneak descends. Keys are configurable in Controls.",
+  "item.billys-mods.viltrumite_genome.flight_help": "G toggles flight. [ and ] select hover, cruise, or full speed. Forward and backward follow your full look angle, including pitch; jump and sneak add vertical thrust. The Superman glide pose engages only after reaching flight speed. Keys are configurable in Controls.",
   "effect.billys-mods.immortality": "Immortality"
 }
