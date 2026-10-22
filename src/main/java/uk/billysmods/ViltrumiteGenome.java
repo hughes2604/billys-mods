@@ -8,6 +8,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.Attribute;
@@ -129,7 +130,7 @@ public final class ViltrumiteGenome {
     }
 
     public static void syncFlightState(ServerPlayer viewer) {
-        for (ServerPlayer subject : viewer.getServer().getPlayerList().getPlayers()) {
+        for (ServerPlayer subject : ((ServerLevel) viewer.level()).getServer().getPlayerList().getPlayers()) {
             if (FLIGHT_SPEED.containsKey(subject.getUUID()) && subject.level() == viewer.level()) {
                 ServerPlayNetworking.send(viewer, new FlightStatePayload(subject.getId(), true));
             }
@@ -143,7 +144,7 @@ public final class ViltrumiteGenome {
     }
 
     private static void publishFlightState(ServerPlayer subject, boolean active) {
-        for (ServerPlayer viewer : subject.getServer().getPlayerList().getPlayers()) {
+        for (ServerPlayer viewer : ((ServerLevel) subject.level()).getServer().getPlayerList().getPlayers()) {
             if (viewer.level() == subject.level()) {
                 ServerPlayNetworking.send(viewer, new FlightStatePayload(subject.getId(), active));
             }
