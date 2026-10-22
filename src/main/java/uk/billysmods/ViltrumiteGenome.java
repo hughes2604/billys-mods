@@ -17,7 +17,6 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.player.Input;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.core.particles.ParticleTypes;
@@ -30,6 +29,8 @@ public final class ViltrumiteGenome {
     private static final ResourceLocation TOUGHNESS_ID = id("genome_toughness");
     private static final ResourceLocation MAX_HEALTH_ID = id("genome_vitality");
     private static final Set<UUID> FLIGHT_ACTIVE = new HashSet<>();
+    private static final Map<UUID, FlightInput> FLIGHT_INPUTS = new HashMap<>();
+    private record FlightInput(float forward, float strafe, boolean jump, boolean shift) { }
     private static final Set<UUID> FLIGHT_BOOSTING = new HashSet<>();
     private static final Map<UUID, Integer> BOOST_LEVELS = new HashMap<>();
     private static final Map<UUID, Boolean> SPRINT_BEFORE_FLIGHT = new HashMap<>();
@@ -134,6 +135,11 @@ public final class ViltrumiteGenome {
         if (!hasGenome(player)) return;
         UUID playerId = player.getUUID();
 
+        if (action == 5) {
+            FLIGHT_INPUTS.put(playerId, new FlightInput(0, 0, false, false));
+            return;
+        }
+
         if (action == 0) {
             if (FLIGHT_ACTIVE.contains(playerId)) {
                 stopFlight(player, playerId);
@@ -203,6 +209,7 @@ public final class ViltrumiteGenome {
     public static void stopFlightOnDisconnect(ServerPlayer player) {
         UUID playerId = player.getUUID();
         BOOST_LEVELS.remove(playerId);
+        FLIGHT_INPUTS.remove(playerId);
         if (FLIGHT_ACTIVE.remove(playerId)) {
             FLIGHT_BOOSTING.remove(playerId);
             restoreSprintAfterFlight(player, playerId);
@@ -247,12 +254,19 @@ public final class ViltrumiteGenome {
     private static void stopFlight(ServerPlayer player, UUID playerId) {
         FLIGHT_ACTIVE.remove(playerId);
         FLIGHT_BOOSTING.remove(playerId);
+        FLIGHT_INPUTS.remove(playerId);
         restoreSprintAfterFlight(player, playerId);
         PUNCH_FOV_TICKS.remove(playerId);
         publishFlightState(player, false);
         player.setNoGravity(false);
         player.stopFallFlying();
         player.setDeltaMovement(player.getDeltaMovement().scale(0.2D));
+    }
+
+    public static void setFlightInput(ServerPlayer player, FlightTogglePayload payload) {
+        if (hasGenome(player) && FLIGHT_ACTIVE.contains(player.getUUID())) {
+            FLIGHT_INPUTS.put(player.getUUID(), new FlightInput(payload.forward(), payload.strafe(), payload.jump(), payload.shift()));
+        }
     }
 
     private static void tickFlight(ServerPlayer player) {
@@ -267,12 +281,12 @@ public final class ViltrumiteGenome {
         if (player.isSprinting()) {
             player.setSprinting(false);
         }
-        Input input = player.getLastClientInput();
+        FlightInput input = FLIGHT_INPUTS.getOrDefault(playerId, new FlightInput(0.0F, 0.0F, false, false));
         Vec3 look = player.getLookAngle().normalize();
         float yawRadians = player.getYRot() * ((float) Math.PI / 180.0F);
         Vec3 right = new Vec3(-Math.cos(yawRadians), 0.0D, -Math.sin(yawRadians));
-        double forwardInput = (input.forward() ? 1.0D : 0.0D) - (input.backward() ? 1.0D : 0.0D);
-        double strafeInput = (input.right() ? 1.0D : 0.0D) - (input.left() ? 1.0D : 0.0D);
+        double forwardInput = input.forward();
+        double strafeInput = input.strafe();
         double verticalInput = (input.jump() ? 1.0D : 0.0D) - (input.shift() ? 1.0D : 0.0D);
         Vec3 direction = look.scale(forwardInput).add(right.scale(strafeInput)).add(0.0D, verticalInput, 0.0D);
 
