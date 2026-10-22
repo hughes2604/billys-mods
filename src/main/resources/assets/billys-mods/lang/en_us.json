@@ -1,13 +1,13 @@
 {
   "key.category.billys-mods.flight": "Billy's Mods",
   "key.billys-mods.toggle_flight": "Toggle Viltrumite Flight",
-  "key.billys-mods.flight_faster": "Increase Flight Speed",
-  "key.billys-mods.flight_slower": "Decrease Flight Speed",
+  "key.billys-mods.flight_faster": "Increase Flight Speed (])",
+  "key.billys-mods.flight_slower": "Decrease Flight Speed ([)",
   "itemGroup.billys-mods.billys_mods": "Billy's Mods",
   "item.billys-mods.elixir_of_life": "Elixir of Immortality",
   "item.billys-mods.elixir_of_mortality": "Elixir of Mortality",
   "item.billys-mods.viltrumite_genome": "Viltrumite Genome",
   "item.billys-mods.viltrumite_genome.description": "Grants Viltrumite strength and durability, plus self-propelled flight while carried.",
-  "item.billys-mods.viltrumite_genome.flight_help": "G toggles flight. Page Up/Down selects one of five speeds. Stage 1 floats upright; stage 5 uses a Superman glide. WASD steers; jump rises and sneak descends. Keys are configurable in Controls.",
+  "item.billys-mods.viltrumite_genome.flight_help": "G toggles flight. [ and ] select one of five speeds. Stage 1 floats upright; stage 5 uses a Superman glide. WASD steers; jump rises and sneak descends. Keys are configurable in Controls.",
   "effect.billys-mods.immortality": "Immortality"
 }

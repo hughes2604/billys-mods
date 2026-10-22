@@ -20,8 +20,8 @@ public final class ViltrumiteClient implements ClientModInitializer {
         KeyMapping.Category category = KeyMapping.Category.register(
                 ResourceLocation.fromNamespaceAndPath(BillysMods.MOD_ID, "flight"));
         flightToggle = register("key.billys-mods.toggle_flight", GLFW.GLFW_KEY_G, category);
-        fasterFlight = register("key.billys-mods.flight_faster", GLFW.GLFW_KEY_PAGE_UP, category);
-        slowerFlight = register("key.billys-mods.flight_slower", GLFW.GLFW_KEY_PAGE_DOWN, category);
+        fasterFlight = register("key.billys-mods.flight_faster", GLFW.GLFW_KEY_RIGHT_BRACKET, category);
+        slowerFlight = register("key.billys-mods.flight_slower", GLFW.GLFW_KEY_LEFT_BRACKET, category);
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null || client.screen != null) {
