@@ -1,13 +1,12 @@
 {
   "key.category.billys-mods.flight": "Billy's Mods",
   "key.billys-mods.toggle_flight": "Toggle Viltrumite Flight",
-  "key.billys-mods.flight_faster": "Increase Flight Speed (])",
-  "key.billys-mods.flight_slower": "Decrease Flight Speed ([)",
+  "key.billys-mods.flight_boost": "Viltrumite Flight Speed Boost (hold Control)",
   "itemGroup.billys-mods.billys_mods": "Billy's Mods",
   "item.billys-mods.elixir_of_life": "Elixir of Immortality",
   "item.billys-mods.elixir_of_mortality": "Elixir of Mortality",
   "item.billys-mods.viltrumite_genome": "Viltrumite Genome",
   "item.billys-mods.viltrumite_genome.description": "Grants Viltrumite strength and durability, plus self-propelled flight while carried.",
-  "item.billys-mods.viltrumite_genome.flight_help": "G toggles flight. [ and ] select hover, cruise, or full speed. Forward and backward follow your full look angle, including pitch; jump and sneak add vertical thrust. The Superman glide pose engages only after reaching flight speed. Keys are configurable in Controls.",
+  "item.billys-mods.viltrumite_genome.flight_help": "G toggles flight. Hold Control to accelerate into a high-speed boost. Backward flight is slower and stays out of the Superman pose. Forward and backward follow your look angle; jump and sneak add vertical thrust. Keys are configurable in Controls.",
   "effect.billys-mods.immortality": "Immortality"
 }

@@ -195,15 +195,19 @@ public final class BillysMods implements ModInitializer {
                     || !(source.getEntity() instanceof ServerPlayer attacker)
                     || source.getDirectEntity() != attacker
                     || !ViltrumiteGenome.hasGenome(attacker)
+                    || !ViltrumiteGenome.isUnarmed(attacker)
                     || entity == attacker) {
                 return;
             }
 
             ServerLevel level = (ServerLevel) attacker.level();
             level.playSound(null, entity.blockPosition(), SoundEvents.PLAYER_ATTACK_KNOCKBACK,
-                    SoundSource.PLAYERS, 1.15F, 0.72F);
+                    SoundSource.PLAYERS, 1.35F, 0.58F);
             level.sendParticles(ParticleTypes.CRIT, entity.getX(), entity.getY() + entity.getBbHeight() * 0.55D,
-                    entity.getZ(), 14, 0.28D, 0.34D, 0.28D, 0.12D);
+                    entity.getZ(), 12, 0.22D, 0.30D, 0.22D, 0.10D);
+            level.sendParticles(ParticleTypes.POOF, entity.getX(), entity.getY() + entity.getBbHeight() * 0.45D,
+                    entity.getZ(), 4, 0.14D, 0.18D, 0.14D, 0.02D);
+            ViltrumiteGenome.pulsePunchFov(attacker);
             entity.knockback(0.45D, attacker.getX() - entity.getX(), attacker.getZ() - entity.getZ());
         });
 

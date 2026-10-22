@@ -7,6 +7,8 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.resources.ResourceLocation;
 import org.lwjgl.glfw.GLFW;
@@ -14,22 +16,34 @@ import org.lwjgl.glfw.GLFW;
 /** Client keybinds send requests; flight state and movement remain server authoritative. */
 public final class ViltrumiteClient implements ClientModInitializer {
     private static KeyMapping flightToggle;
-    private static KeyMapping fasterFlight;
-    private static KeyMapping slowerFlight;
+    private static KeyMapping flightBoost;
+    private static boolean boostWasDown;
 
     @Override
     public void onInitializeClient() {
         KeyMapping.Category category = KeyMapping.Category.register(
                 ResourceLocation.fromNamespaceAndPath(BillysMods.MOD_ID, "flight"));
         flightToggle = register("key.billys-mods.toggle_flight", GLFW.GLFW_KEY_G, category);
-        fasterFlight = register("key.billys-mods.flight_faster", GLFW.GLFW_KEY_RIGHT_BRACKET, category);
-        slowerFlight = register("key.billys-mods.flight_slower", GLFW.GLFW_KEY_LEFT_BRACKET, category);
+        flightBoost = register("key.billys-mods.flight_boost", GLFW.GLFW_KEY_LEFT_CONTROL, category);
 
         ClientPlayNetworking.registerGlobalReceiver(FlightStatePayload.TYPE,
-                (payload, context) -> context.client().execute(() ->
-                        FlightClientState.setFlying(payload.entityId(), payload.active())));
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> FlightClientState.clear());
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> FlightClientState.clear());
+                (payload, context) -> context.client().execute(() -> {
+                    boolean wasBoosting = FlightClientState.isBoosting(payload.entityId());
+                    FlightClientState.setFlight(payload.entityId(), payload.active(), payload.boosting());
+                    if (payload.boosting() && !wasBoosting && context.client().player != null
+                            && context.client().player.getId() == payload.entityId()) {
+                        context.client().getSoundManager().play(SimpleSoundInstance.forLocalAmbience(
+                                SoundEvents.TRIDENT_RIPTIDE_3, 1.25F, 0.85F));
+                    }
+                }));
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+            FlightClientState.clear();
+            boostWasDown = false;
+        });
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            FlightClientState.clear();
+            boostWasDown = false;
+        });
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             FlightClientState.removeMissing(client.level);
@@ -42,16 +56,19 @@ public final class ViltrumiteClient implements ClientModInitializer {
                 }
             }
             if (client.player == null || client.screen != null) {
+                if (boostWasDown) {
+                    ClientPlayNetworking.send(new FlightTogglePayload(2));
+                    boostWasDown = false;
+                }
                 return;
             }
             while (flightToggle.consumeClick()) {
                 ClientPlayNetworking.send(new FlightTogglePayload(0));
             }
-            while (fasterFlight.consumeClick()) {
-                ClientPlayNetworking.send(new FlightTogglePayload(1));
-            }
-            while (slowerFlight.consumeClick()) {
-                ClientPlayNetworking.send(new FlightTogglePayload(-1));
+            boolean boostDown = FlightClientState.isFlying(client.player.getId()) && flightBoost.isDown();
+            if (boostDown != boostWasDown) {
+                ClientPlayNetworking.send(new FlightTogglePayload(boostDown ? 1 : 2));
+                boostWasDown = boostDown;
             }
         });
     }

@@ -155,7 +155,11 @@ public final class ViltrumiteGenome {
     }
 
     public static void stopFlightOnDisconnect(ServerPlayer player) {
-        if (FLIGHT_SPEED.remove(player.getUUID()) != null) {
+        UUID playerId = player.getUUID();
+        if (FLIGHT_ACTIVE.remove(playerId)) {
+            FLIGHT_BOOSTING.remove(playerId);
+            restoreSprintAfterBoost(player, playerId);
+            PUNCH_FOV_TICKS.remove(playerId);
             player.setNoGravity(false);
             player.stopFallFlying();
         }
@@ -163,28 +167,34 @@ public final class ViltrumiteGenome {
 
     public static void syncFlightState(ServerPlayer viewer) {
         for (ServerPlayer subject : ((ServerLevel) viewer.level()).getServer().getPlayerList().getPlayers()) {
-            if (FLIGHT_SPEED.containsKey(subject.getUUID()) && subject.level() == viewer.level()) {
-                ServerPlayNetworking.send(viewer, new FlightStatePayload(subject.getId(), true));
+            if (FLIGHT_ACTIVE.contains(subject.getUUID()) && subject.level() == viewer.level()) {
+                ServerPlayNetworking.send(viewer, new FlightStatePayload(subject.getId(), true,
+                        FLIGHT_BOOSTING.contains(subject.getUUID())));
             }
         }
     }
 
     public static void syncTrackedPlayer(ServerPlayer subject, ServerPlayer viewer) {
-        if (FLIGHT_SPEED.containsKey(subject.getUUID())) {
-            ServerPlayNetworking.send(viewer, new FlightStatePayload(subject.getId(), true));
+        if (FLIGHT_ACTIVE.contains(subject.getUUID())) {
+            ServerPlayNetworking.send(viewer, new FlightStatePayload(subject.getId(), true,
+                    FLIGHT_BOOSTING.contains(subject.getUUID())));
         }
     }
 
     private static void publishFlightState(ServerPlayer subject, boolean active) {
+        boolean boosting = active && FLIGHT_BOOSTING.contains(subject.getUUID());
         for (ServerPlayer viewer : ((ServerLevel) subject.level()).getServer().getPlayerList().getPlayers()) {
             if (viewer.level() == subject.level()) {
-                ServerPlayNetworking.send(viewer, new FlightStatePayload(subject.getId(), active));
+                ServerPlayNetworking.send(viewer, new FlightStatePayload(subject.getId(), active, boosting));
             }
         }
     }
 
     private static void stopFlight(ServerPlayer player, UUID playerId) {
-        FLIGHT_SPEED.remove(playerId);
+        FLIGHT_ACTIVE.remove(playerId);
+        FLIGHT_BOOSTING.remove(playerId);
+        restoreSprintAfterBoost(player, playerId);
+        PUNCH_FOV_TICKS.remove(playerId);
         publishFlightState(player, false);
         player.setNoGravity(false);
         player.stopFallFlying();
@@ -193,57 +203,55 @@ public final class ViltrumiteGenome {
 
     private static void tickFlight(ServerPlayer player) {
         UUID playerId = player.getUUID();
-        Integer stage = FLIGHT_SPEED.get(playerId);
         if (!hasGenome(player)) {
-            if (stage != null) {
-                stopFlight(player, playerId);
-            }
+            if (FLIGHT_ACTIVE.contains(playerId)) stopFlight(player, playerId);
             return;
         }
-        if (stage == null) {
-            return;
-        }
+        if (!FLIGHT_ACTIVE.contains(playerId)) return;
 
         player.setNoGravity(true);
         Input input = player.getLastClientInput();
         Vec3 look = player.getLookAngle().normalize();
         float yawRadians = player.getYRot() * ((float) Math.PI / 180.0F);
-        // Negate the yaw perpendicular: at yaw zero, Minecraft faces +Z and its right is -X.
         Vec3 right = new Vec3(-Math.cos(yawRadians), 0.0D, -Math.sin(yawRadians));
         double forwardInput = (input.forward() ? 1.0D : 0.0D) - (input.backward() ? 1.0D : 0.0D);
         double strafeInput = (input.right() ? 1.0D : 0.0D) - (input.left() ? 1.0D : 0.0D);
         double verticalInput = (input.jump() ? 1.0D : 0.0D) - (input.shift() ? 1.0D : 0.0D);
+        Vec3 direction = look.scale(forwardInput).add(right.scale(strafeInput)).add(0.0D, verticalInput, 0.0D);
 
-        // Forward/back follow the full view vector, including pitch, like pointing and
-        // throttling an aircraft. Jump/sneak provide direct vertical thrust.
-        Vec3 direction = look.scale(forwardInput)
-                .add(right.scale(strafeInput))
-                .add(0.0D, verticalInput, 0.0D);
         Vec3 velocity = player.getDeltaMovement();
-        Vec3 nextVelocity;
-        if (direction.lengthSqr() < 1.0E-4D) {
-            nextVelocity = velocity.scale(stage == 1 ? 0.76D : 0.985D);
-        } else {
-            Vec3 desired = direction.normalize().scale(FLIGHT_SPEEDS[stage]);
-            double responsiveness = stage == 1 ? 0.24D : (stage == 2 ? 0.24D : 0.26D);
-            if (velocity.lengthSqr() > 0.04D && velocity.dot(desired) < 0.0D) {
-                // Stronger reverse thrust prevents long drifts when changing direction.
-                responsiveness = Math.max(responsiveness, 0.42D);
-            }
-            nextVelocity = velocity.scale(1.0D - responsiveness).add(desired.scale(responsiveness));
+        Vec3 desired = Vec3.ZERO;
+        boolean reversing = forwardInput < 0.0D;
+        if (direction.lengthSqr() >= 1.0E-4D) {
+            double topSpeed = reversing ? REVERSE_SPEED
+                    : (FLIGHT_BOOSTING.contains(playerId) && forwardInput > 0.0D ? BOOST_SPEED : CRUISE_SPEED);
+            desired = direction.normalize().scale(topSpeed);
         }
-
-        // Use actual velocity with a small hysteresis band, so the pose follows
-        // acceleration and remains off while hovering or stopped.
+        boolean boostingForward = FLIGHT_BOOSTING.contains(playerId) && forwardInput > 0.0D;
+        double acceleration = boostingForward ? 0.18D : 0.13D;
+        if (velocity.lengthSqr() > 0.04D && velocity.dot(desired) < 0.0D) {
+            acceleration = 0.30D;
+        }
+        Vec3 nextVelocity = velocity.scale(1.0D - acceleration).add(desired.scale(acceleration));
         double speed = nextVelocity.length();
-        if (!player.isFallFlying() && speed >= 0.72D) {
+        double forwardSpeed = nextVelocity.dot(look);
+        if (!player.isFallFlying() && forwardSpeed >= SUPERMAN_ENTRY_SPEED) {
             player.startFallFlying();
-        } else if (player.isFallFlying() && speed <= 0.54D) {
+        } else if (player.isFallFlying() && forwardSpeed <= SUPERMAN_EXIT_SPEED) {
             player.stopFallFlying();
         }
 
         player.setDeltaMovement(nextVelocity);
         player.yBodyRot = player.getYRot() + (float) strafeInput * (player.isFallFlying() ? 28.0F : 12.0F);
         player.hurtMarked = true;
+
+        if (boostingForward && speed > 0.8D && player.tickCount % 3 == 0) {
+            ServerLevel level = (ServerLevel) player.level();
+            level.sendParticles(ParticleTypes.CLOUD,
+                    player.getX() - nextVelocity.x * 0.28D,
+                    player.getY() + player.getBbHeight() * 0.45D - nextVelocity.y * 0.12D,
+                    player.getZ() - nextVelocity.z * 0.28D,
+                    1, 0.04D, 0.04D, 0.04D, 0.01D);
+        }
     }
 }
