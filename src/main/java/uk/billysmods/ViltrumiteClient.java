@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.KeyMapping;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.resources.ResourceLocation;
 import org.lwjgl.glfw.GLFW;
 
@@ -32,6 +33,14 @@ public final class ViltrumiteClient implements ClientModInitializer {
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             FlightClientState.removeMissing(client.level);
+            if (client.level != null) {
+                for (Player player : client.level.players()) {
+                    if (FlightClientState.isFlying(player.getId())) {
+                        // Reset vanilla limb animation after entity ticks and before rendering.
+                        player.walkAnimation.stop();
+                    }
+                }
+            }
             if (client.player == null || client.screen != null) {
                 return;
             }
